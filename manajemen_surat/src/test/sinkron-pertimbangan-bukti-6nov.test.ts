@@ -250,13 +250,16 @@ function majuKeKartu(t: string, sisi: "P" | "T"): string {
 }
 const tanpaSegmen = (t: string) => t.replace(/\{\{tdkbantah\|([\s\S]*?)\}\}/g, "$1").replace(/\[\[([\s\S]*?)\]\]/g, "$1");
 
+/** Kartu itsbat nikah dan dispensasi kawin diperiksa di sinkron-pertimbangan-itsbat-dk-6nov.test.ts terhadap bahan mereka. */
+const KARTU_CERAI = KARTU_PERTIMBANGAN.filter((k) => k.perkara.every((j) => j === "CG" || j === "CT"));
+
 describe("kepatuhan: bunyi kartu berasal dari bahan blangko", () => {
   it("ada kartu dan tiap kartu punya rujukan", () => {
     expect(KARTU_PERTIMBANGAN.length).toBeGreaterThanOrEqual(10);
     for (const k of KARTU_PERTIMBANGAN) expect(k.asal.length > 0 || Boolean(k.sumberKhusus)).toBe(true);
   });
   it("setiap rujukan menunjuk alinea nyata yang sama dengan bunyi kartu", () => {
-    for (const k of KARTU_PERTIMBANGAN) {
+    for (const k of KARTU_CERAI) {
       for (const a of k.asal) {
         const blangko = bahan.blangko.find((b) => b.folder === a.folder && b.berkas === a.berkas);
         expect(blangko, `${k.id}: blangko ${a.berkas}`).toBeTruthy();
@@ -280,6 +283,6 @@ describe("kepatuhan: bunyi kartu berasal dari bahan blangko", () => {
     }
   });
   it("kartu hanya memakai berkas Kabul/Tolak yang ada di bahan dan hanya untuk cerai", () => {
-    for (const k of KARTU_PERTIMBANGAN) for (const a of k.asal) expect(/Perceraian (CG|CT)/.test(a.folder)).toBe(true);
+    for (const k of KARTU_CERAI) for (const a of k.asal) expect(/Perceraian (CG|CT)/.test(a.folder)).toBe(true);
   });
 });

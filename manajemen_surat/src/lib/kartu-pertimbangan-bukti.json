@@ -1,5 +1,5 @@
 {
- "versi": 1,
+ "versi": 2,
  "sumber": "Blangko ABT by Derry Briantono, isi blangko tanpa data perkara",
  "dibuat": "2026-11-06",
  "kartu": [
@@ -8,7 +8,7 @@
    "kunci": [
     "ktp"
    ],
-   "cerai": [
+   "perkara": [
     "CG",
     "CT"
    ],
@@ -51,7 +51,7 @@
    "kunci": [
     "nikah"
    ],
-   "cerai": [
+   "perkara": [
     "CG",
     "CT"
    ],
@@ -95,7 +95,7 @@
     "ktp",
     "nikah"
    ],
-   "cerai": [
+   "perkara": [
     "CG",
     "CT"
    ],
@@ -128,7 +128,7 @@
     "ktp",
     "nikah"
    ],
-   "cerai": [
+   "perkara": [
     "CG",
     "CT"
    ],
@@ -161,7 +161,7 @@
     "ktp",
     "nikah"
    ],
-   "cerai": [
+   "perkara": [
     "CG",
     "CT"
    ],
@@ -182,7 +182,7 @@
     "ktp",
     "nikah"
    ],
-   "cerai": [
+   "perkara": [
     "CG",
     "CT"
    ],
@@ -214,7 +214,7 @@
    "kunci": [
     "ktp"
    ],
-   "cerai": [
+   "perkara": [
     "CG",
     "CT"
    ],
@@ -257,7 +257,7 @@
    "kunci": [
     "nikah"
    ],
-   "cerai": [
+   "perkara": [
     "CG",
     "CT"
    ],
@@ -288,7 +288,7 @@
    "kunci": [
     "nikah"
    ],
-   "cerai": [
+   "perkara": [
     "CG",
     "CT"
    ],
@@ -319,7 +319,7 @@
     "ktp",
     "nikah"
    ],
-   "cerai": [
+   "perkara": [
     "CG",
     "CT"
    ],
@@ -350,7 +350,7 @@
   {
    "id": "kabul-meterai-lain",
    "kunci": "*",
-   "cerai": [
+   "perkara": [
     "CG",
     "CT"
    ],
@@ -380,7 +380,7 @@
   {
    "id": "kabul-cocok-lain",
    "kunci": "*",
-   "cerai": [
+   "perkara": [
     "CG",
     "CT"
    ],
@@ -410,7 +410,7 @@
   {
    "id": "kabul-cocok-tidak-lain",
    "kunci": "*",
-   "cerai": [
+   "perkara": [
     "CG",
     "CT"
    ],
@@ -428,7 +428,7 @@
   {
    "id": "kabul-akta-lain",
    "kunci": "*",
-   "cerai": [
+   "perkara": [
     "CG",
     "CT"
    ],
@@ -454,6 +454,1565 @@
    ],
    "syarat": "aktaOtentik",
    "kelompok": true
+  },
+  {
+   "id": "in-meterai",
+   "kunci": [
+    "ktp"
+   ],
+   "perkara": [
+    "IN"
+   ],
+   "keadaan": [
+    "kabul",
+    "tolak",
+    "tdt"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "- Bahwa bukti {kode} yang diajukan {para}{pihak} telah diberi meterai cukup dan telah dinazegelen. Dengan demikian, bukti tersebut dapat diterima dan dipertimbangkan, sebagaimana ketentuan Pasal 3 ayat (1) jo. Pasal 5 Undang-Undang Nomor 10 Tahun 2020 tentang Bea Meterai jo. Surat Edaran Direktorat Jenderal Badan Peradilan Agama Nomor 1 Tahun 2021 tentang Penyesuaian Bea Meterai di Lingkungan Peradilan Agama;",
+   "asal": [
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01] [Kabul] IN.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01a] [Kabul] IN - Syahadah Al Istifadhah.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01b] [Kabul] IN Itsbat Terpadu.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01d] [Kabul] IN - Format Lengkap Rukun dan Syarat per Unsur.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01e] [Kabul] IN - Satu Pemohon (Pasangan Meninggal, Voluntair).rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01f] [Kabul] IN Kabul (Hadir Tapi Lupa Prosesi Nikah).rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah).rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03a] [Tolak] IN - Rukun dan Syarat Nikah Tidak Terbukti.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03b] [Tolak] IN - Terdapat Halangan Perkawinan.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03c] [Tolak] IN - Alternatif Tolak - Salah Satu Pihak Masih Terikat Perkawinan Lain.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99aa] Pertimbangan - Cerai Hidup P1 P2 Pasangan Sebelumnya.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99aa] Pertimbangan - Cerai Mati P1 P2 Pasangan Sebelumnya.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99c] [NO] IN - Poligami Sirri atau Masih Terikat Perkawinan Lain (SEMA 3 2018, Buku II 2026).rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99d] [NO] IN - Pernikahan Sesudah 2019 Tidak Dicatatkan Tanpa Alasan Mendesak (UU Adminduk).rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    }
+   ],
+   "syarat": "meterai0",
+   "kelompok": true
+  },
+  {
+   "id": "in-meterai-lain",
+   "kunci": "*",
+   "perkara": [
+    "IN"
+   ],
+   "keadaan": [
+    "kabul",
+    "tolak",
+    "tdt"
+   ],
+   "sisi": "P",
+   "kategori": "pelengkap",
+   "bunyi": "- Bahwa bukti {kode} yang diajukan {para}{pihak} telah diberi meterai cukup dan telah dinazegelen. Dengan demikian, bukti tersebut dapat diterima dan dipertimbangkan, sebagaimana ketentuan Pasal 3 ayat (1) jo. Pasal 5 Undang-Undang Nomor 10 Tahun 2020 tentang Bea Meterai jo. Surat Edaran Direktorat Jenderal Badan Peradilan Agama Nomor 1 Tahun 2021 tentang Penyesuaian Bea Meterai di Lingkungan Peradilan Agama;",
+   "asal": [
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01] [Kabul] IN.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01a] [Kabul] IN - Syahadah Al Istifadhah.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01b] [Kabul] IN Itsbat Terpadu.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01d] [Kabul] IN - Format Lengkap Rukun dan Syarat per Unsur.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01e] [Kabul] IN - Satu Pemohon (Pasangan Meninggal, Voluntair).rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01f] [Kabul] IN Kabul (Hadir Tapi Lupa Prosesi Nikah).rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah).rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03a] [Tolak] IN - Rukun dan Syarat Nikah Tidak Terbukti.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03b] [Tolak] IN - Terdapat Halangan Perkawinan.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03c] [Tolak] IN - Alternatif Tolak - Salah Satu Pihak Masih Terikat Perkawinan Lain.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99aa] Pertimbangan - Cerai Hidup P1 P2 Pasangan Sebelumnya.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99aa] Pertimbangan - Cerai Mati P1 P2 Pasangan Sebelumnya.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99c] [NO] IN - Poligami Sirri atau Masih Terikat Perkawinan Lain (SEMA 3 2018, Buku II 2026).rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99d] [NO] IN - Pernikahan Sesudah 2019 Tidak Dicatatkan Tanpa Alasan Mendesak (UU Adminduk).rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    }
+   ],
+   "syarat": "meterai0",
+   "kelompok": true
+  },
+  {
+   "id": "in-cocok",
+   "kunci": [
+    "ktp"
+   ],
+   "perkara": [
+    "IN"
+   ],
+   "keadaan": [
+    "kabul",
+    "tolak",
+    "tdt"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "- Bahwa bukti {kode} adalah fotokopi yang telah dicocokkan dengan aslinya yang ternyata sesuai, sehingga dapat dipertimbangkan lebih lanjut, sebagaimana ketentuan Pasal 1888 Kitab Undang-Undang Hukum Perdata (KUHPerdata) yang pada pokoknya menyatakan bahwa kekuatan bukti tulisan adalah pada akta aslinya;",
+   "asal": [
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01] [Kabul] IN.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01a] [Kabul] IN - Syahadah Al Istifadhah.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01b] [Kabul] IN Itsbat Terpadu.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01d] [Kabul] IN - Format Lengkap Rukun dan Syarat per Unsur.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01e] [Kabul] IN - Satu Pemohon (Pasangan Meninggal, Voluntair).rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01f] [Kabul] IN Kabul (Hadir Tapi Lupa Prosesi Nikah).rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah).rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03a] [Tolak] IN - Rukun dan Syarat Nikah Tidak Terbukti.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03b] [Tolak] IN - Terdapat Halangan Perkawinan.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03c] [Tolak] IN - Alternatif Tolak - Salah Satu Pihak Masih Terikat Perkawinan Lain.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99aa] Pertimbangan - Cerai Hidup P1 P2 Pasangan Sebelumnya.rtf",
+     "alinea": 4,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99aa] Pertimbangan - Cerai Mati P1 P2 Pasangan Sebelumnya.rtf",
+     "alinea": 4,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99c] [NO] IN - Poligami Sirri atau Masih Terikat Perkawinan Lain (SEMA 3 2018, Buku II 2026).rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99d] [NO] IN - Pernikahan Sesudah 2019 Tidak Dicatatkan Tanpa Alasan Mendesak (UU Adminduk).rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    }
+   ],
+   "syarat": "cocok0",
+   "kelompok": true
+  },
+  {
+   "id": "in-cocok-lain",
+   "kunci": "*",
+   "perkara": [
+    "IN"
+   ],
+   "keadaan": [
+    "kabul",
+    "tolak",
+    "tdt"
+   ],
+   "sisi": "P",
+   "kategori": "pelengkap",
+   "bunyi": "- Bahwa bukti {kode} adalah fotokopi yang telah dicocokkan dengan aslinya yang ternyata sesuai, sehingga dapat dipertimbangkan lebih lanjut, sebagaimana ketentuan Pasal 1888 Kitab Undang-Undang Hukum Perdata (KUHPerdata) yang pada pokoknya menyatakan bahwa kekuatan bukti tulisan adalah pada akta aslinya;",
+   "asal": [
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01] [Kabul] IN.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01a] [Kabul] IN - Syahadah Al Istifadhah.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01b] [Kabul] IN Itsbat Terpadu.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01d] [Kabul] IN - Format Lengkap Rukun dan Syarat per Unsur.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01e] [Kabul] IN - Satu Pemohon (Pasangan Meninggal, Voluntair).rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01f] [Kabul] IN Kabul (Hadir Tapi Lupa Prosesi Nikah).rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah).rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03a] [Tolak] IN - Rukun dan Syarat Nikah Tidak Terbukti.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03b] [Tolak] IN - Terdapat Halangan Perkawinan.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03c] [Tolak] IN - Alternatif Tolak - Salah Satu Pihak Masih Terikat Perkawinan Lain.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99aa] Pertimbangan - Cerai Hidup P1 P2 Pasangan Sebelumnya.rtf",
+     "alinea": 4,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99aa] Pertimbangan - Cerai Mati P1 P2 Pasangan Sebelumnya.rtf",
+     "alinea": 4,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99c] [NO] IN - Poligami Sirri atau Masih Terikat Perkawinan Lain (SEMA 3 2018, Buku II 2026).rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99d] [NO] IN - Pernikahan Sesudah 2019 Tidak Dicatatkan Tanpa Alasan Mendesak (UU Adminduk).rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    }
+   ],
+   "syarat": "cocok0",
+   "kelompok": true
+  },
+  {
+   "id": "in-cocok-tidak",
+   "kunci": [
+    "ktp"
+   ],
+   "perkara": [
+    "IN"
+   ],
+   "keadaan": [
+    "kabul",
+    "tolak",
+    "tdt"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "- Bahwa bukti {kode} adalah fotokopi yang tidak dapat dicocokkan dengan aslinya;",
+   "asal": [],
+   "syarat": "cocok1",
+   "kelompok": true,
+   "sumberKhusus": "Keputusan pemilik: bukti tanpa asli cukup berbunyi \"tidak dapat dicocokkan dengan aslinya\". Bunyi tidak ada di blangko."
+  },
+  {
+   "id": "in-cocok-tidak-lain",
+   "kunci": "*",
+   "perkara": [
+    "IN"
+   ],
+   "keadaan": [
+    "kabul",
+    "tolak",
+    "tdt"
+   ],
+   "sisi": "P",
+   "kategori": "pelengkap",
+   "bunyi": "- Bahwa bukti {kode} adalah fotokopi yang tidak dapat dicocokkan dengan aslinya;",
+   "asal": [],
+   "syarat": "cocok1",
+   "kelompok": true,
+   "sumberKhusus": "Keputusan pemilik: bukti tanpa asli cukup berbunyi \"tidak dapat dicocokkan dengan aslinya\". Bunyi tidak ada di blangko."
+  },
+  {
+   "id": "in-akta",
+   "kunci": [
+    "ktp"
+   ],
+   "perkara": [
+    "IN"
+   ],
+   "keadaan": [
+    "kabul",
+    "tolak",
+    "tdt"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "- Bahwa bukti {kode} merupakan akta autentik yang dibuat oleh pejabat yang berwenang, sehingga mempunyai nilai kekuatan pembuktian sempurna dan mengikat (volledig en bindende bewijskracht), sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata (KUHPerdata);",
+   "asal": [
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01] [Kabul] IN.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01a] [Kabul] IN - Syahadah Al Istifadhah.rtf",
+     "alinea": 8,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01b] [Kabul] IN Itsbat Terpadu.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01d] [Kabul] IN - Format Lengkap Rukun dan Syarat per Unsur.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01e] [Kabul] IN - Satu Pemohon (Pasangan Meninggal, Voluntair).rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01f] [Kabul] IN Kabul (Hadir Tapi Lupa Prosesi Nikah).rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah).rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03a] [Tolak] IN - Rukun dan Syarat Nikah Tidak Terbukti.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03b] [Tolak] IN - Terdapat Halangan Perkawinan.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03c] [Tolak] IN - Alternatif Tolak - Salah Satu Pihak Masih Terikat Perkawinan Lain.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99aa] Pertimbangan - Cerai Hidup P1 P2 Pasangan Sebelumnya.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99aa] Pertimbangan - Cerai Mati P1 P2 Pasangan Sebelumnya.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99c] [NO] IN - Poligami Sirri atau Masih Terikat Perkawinan Lain (SEMA 3 2018, Buku II 2026).rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99d] [NO] IN - Pernikahan Sesudah 2019 Tidak Dicatatkan Tanpa Alasan Mendesak (UU Adminduk).rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    }
+   ],
+   "syarat": "aktaOtentik",
+   "kelompok": true
+  },
+  {
+   "id": "in-akta-lain",
+   "kunci": "*",
+   "perkara": [
+    "IN"
+   ],
+   "keadaan": [
+    "kabul",
+    "tolak",
+    "tdt"
+   ],
+   "sisi": "P",
+   "kategori": "pelengkap",
+   "bunyi": "- Bahwa bukti {kode} merupakan akta autentik yang dibuat oleh pejabat yang berwenang, sehingga mempunyai nilai kekuatan pembuktian sempurna dan mengikat (volledig en bindende bewijskracht), sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata (KUHPerdata);",
+   "asal": [
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01] [Kabul] IN.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01a] [Kabul] IN - Syahadah Al Istifadhah.rtf",
+     "alinea": 8,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01b] [Kabul] IN Itsbat Terpadu.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01d] [Kabul] IN - Format Lengkap Rukun dan Syarat per Unsur.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01e] [Kabul] IN - Satu Pemohon (Pasangan Meninggal, Voluntair).rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01f] [Kabul] IN Kabul (Hadir Tapi Lupa Prosesi Nikah).rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah).rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03a] [Tolak] IN - Rukun dan Syarat Nikah Tidak Terbukti.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03b] [Tolak] IN - Terdapat Halangan Perkawinan.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03c] [Tolak] IN - Alternatif Tolak - Salah Satu Pihak Masih Terikat Perkawinan Lain.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99aa] Pertimbangan - Cerai Hidup P1 P2 Pasangan Sebelumnya.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99aa] Pertimbangan - Cerai Mati P1 P2 Pasangan Sebelumnya.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99c] [NO] IN - Poligami Sirri atau Masih Terikat Perkawinan Lain (SEMA 3 2018, Buku II 2026).rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99d] [NO] IN - Pernikahan Sesudah 2019 Tidak Dicatatkan Tanpa Alasan Mendesak (UU Adminduk).rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    }
+   ],
+   "syarat": "aktaOtentik",
+   "kelompok": true
+  },
+  {
+   "id": "in-kedudukan-hukum",
+   "kunci": [
+    "ktp"
+   ],
+   "perkara": [
+    "IN"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "- Bahwa bukti {kode} tersebut secara materiil meneguhkan kedudukan hukum (legal standing) {para}{pihak} sebagai subjek hukum yang memiliki kualitas dan kepentingan hukum (persona standi in judicio) untuk mengajukan {perkara} pengesahan nikah ini, sehingga dengan demikian {perkara} {para}{pihak} dapat diterima untuk dipertimbangkan lebih lanjut;",
+   "asal": [
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01] [Kabul] IN.rtf",
+     "alinea": 8,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01b] [Kabul] IN Itsbat Terpadu.rtf",
+     "alinea": 8,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01d] [Kabul] IN - Format Lengkap Rukun dan Syarat per Unsur.rtf",
+     "alinea": 8,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01e] [Kabul] IN - Satu Pemohon (Pasangan Meninggal, Voluntair).rtf",
+     "alinea": 8,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[01f] [Kabul] IN Kabul (Hadir Tapi Lupa Prosesi Nikah).rtf",
+     "alinea": 8,
+     "sisiSumber": "P"
+    }
+   ],
+   "kelompok": true,
+   "maks": 2
+  },
+  {
+   "id": "in-ktp-wilayah",
+   "kunci": [
+    "ktp"
+   ],
+   "perkara": [
+    "IN"
+   ],
+   "keadaan": [
+    "tolak",
+    "tdt"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "- Bahwa berdasarkan bukti {kode} berupa fotokopi Kartu Tanda Penduduk {para}{pihak}, terbukti bahwa {para}{pihak} saat ini bertempat tinggal di wilayah {alamat};",
+   "asal": [
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah).rtf",
+     "alinea": 8,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03a] [Tolak] IN - Rukun dan Syarat Nikah Tidak Terbukti.rtf",
+     "alinea": 8,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03b] [Tolak] IN - Terdapat Halangan Perkawinan.rtf",
+     "alinea": 8,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[03c] [Tolak] IN - Alternatif Tolak - Salah Satu Pihak Masih Terikat Perkawinan Lain.rtf",
+     "alinea": 8,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99c] [NO] IN - Poligami Sirri atau Masih Terikat Perkawinan Lain (SEMA 3 2018, Buku II 2026).rtf",
+     "alinea": 8,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "2 Itsbat Nikah",
+     "berkas": "[99d] [NO] IN - Pernikahan Sesudah 2019 Tidak Dicatatkan Tanpa Alasan Mendesak (UU Adminduk).rtf",
+     "alinea": 8,
+     "sisiSumber": "P"
+    }
+   ],
+   "kelompok": true,
+   "maks": 2,
+   "butuh": [
+    "alamat"
+   ]
+  },
+  {
+   "id": "dk-formil-kabul",
+   "kunci": [
+    "ktp",
+    "kia",
+    "lahir",
+    "ijazah",
+    "tolak",
+    "hamil",
+    "bidan"
+   ],
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa bukti bertanda {fotokopi} berupa fotokopi[[ dan bukti bertanda {asli} merupakan surat asli]] yang berdasarkan {pasalAkta} mempunyai nilai kekuatan pembuktian sempurna dan mengikat (volledig en bindende bewijskracht) karena alat-alat bukti tersebut berupa akta autentik. Keseluruhan alat bukti tersebut telah bercap pos (nazegelen) dan sesuai dengan aslinya, dan secara materiil bukti bertanda {berkaitan} tersebut berkaitan dengan perkara ini sehingga sesuai maksud Pasal 1888 KUH Perdata jo. Pasal 3 ayat (1) huruf b Undang-Undang Nomor 10 Tahun 2020 tentang Bea Meterai, dengan demikian bukti surat yang diajukan oleh {para}{pihak} tersebut memenuhi syarat formil sehingga dapat diterima sebagai alat bukti dan dapat dipertimbangkan lebih lanjut;",
+   "asal": [
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01] [Kabul] DK - (Anak P Cewek) Hamil.rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil.rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01c] [Kabul] DK - (Anak P Cewek) Alasan Mendesak Otomatis (Hamil atau Pacaran Erat).rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[02] [Kabul] DK - (Anak P Cewek) sudah berhubungan badan.rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[02] [Kabul] DK - (Anak P Cowok) sudah berhubungan badan.rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    }
+   ],
+   "syarat": "lengkap",
+   "kelompok": true,
+   "butuh": [
+    "fotokopi"
+   ]
+  },
+  {
+   "id": "dk-formil-kabul-lain",
+   "kunci": "*",
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "P",
+   "kategori": "pelengkap",
+   "bunyi": "Menimbang, bahwa bukti bertanda {fotokopi} berupa fotokopi[[ dan bukti bertanda {asli} merupakan surat asli]] yang berdasarkan {pasalAkta} mempunyai nilai kekuatan pembuktian sempurna dan mengikat (volledig en bindende bewijskracht) karena alat-alat bukti tersebut berupa akta autentik. Keseluruhan alat bukti tersebut telah bercap pos (nazegelen) dan sesuai dengan aslinya, dan secara materiil bukti bertanda {berkaitan} tersebut berkaitan dengan perkara ini sehingga sesuai maksud Pasal 1888 KUH Perdata jo. Pasal 3 ayat (1) huruf b Undang-Undang Nomor 10 Tahun 2020 tentang Bea Meterai, dengan demikian bukti surat yang diajukan oleh {para}{pihak} tersebut memenuhi syarat formil sehingga dapat diterima sebagai alat bukti dan dapat dipertimbangkan lebih lanjut;",
+   "asal": [
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01] [Kabul] DK - (Anak P Cewek) Hamil.rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil.rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01c] [Kabul] DK - (Anak P Cewek) Alasan Mendesak Otomatis (Hamil atau Pacaran Erat).rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[02] [Kabul] DK - (Anak P Cewek) sudah berhubungan badan.rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[02] [Kabul] DK - (Anak P Cowok) sudah berhubungan badan.rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    }
+   ],
+   "syarat": "lengkap",
+   "kelompok": true,
+   "butuh": [
+    "fotokopi"
+   ]
+  },
+  {
+   "id": "dk-formil-tolak",
+   "kunci": [
+    "ktp",
+    "kia",
+    "lahir",
+    "ijazah",
+    "tolak",
+    "hamil",
+    "bidan"
+   ],
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "tolak"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa bukti bertanda {fotokopi} berupa fotokopi[[ dan bukti bertanda {asli} merupakan surat asli]] yang berdasarkan {pasalAkta} mempunyai nilai kekuatan pembuktian sempurna dan mengikat (volledig en bindende bewijskracht) karena alat-alat bukti tersebut berupa akta autentik. Keseluruhan alat bukti tersebut telah bercap pos (nazegelen) dan sesuai dengan aslinya, dan secara materiil bukti bertanda {berkaitan} tersebut berkaitan dengan perkara ini sehingga sesuai maksud Pasal 1888 KUH Perdata jo. Pasal 3 Ayat (1) huruf b Undang-Undang Nomor 10 Tahun 2020 tentang Bea Meterai, dengan demikian bukti surat yang diajukan oleh {para}{pihak} tersebut memenuhi syarat formil sehingga dapat diterima sebagai alat bukti dan dapat dipertimbangkan lebih lanjut;",
+   "asal": [
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03a] [Tolak] DK - (Anak P Cowok) Calon Istri Belum Hamil, Hanya Berpacaran.rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03b] [Tolak] DK - (Anak P Cewek) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03c] [Tolak] DK - (Anak P Cowok) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    }
+   ],
+   "syarat": "lengkap",
+   "kelompok": true,
+   "butuh": [
+    "fotokopi"
+   ]
+  },
+  {
+   "id": "dk-formil-tolak-lain",
+   "kunci": "*",
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "tolak"
+   ],
+   "sisi": "P",
+   "kategori": "pelengkap",
+   "bunyi": "Menimbang, bahwa bukti bertanda {fotokopi} berupa fotokopi[[ dan bukti bertanda {asli} merupakan surat asli]] yang berdasarkan {pasalAkta} mempunyai nilai kekuatan pembuktian sempurna dan mengikat (volledig en bindende bewijskracht) karena alat-alat bukti tersebut berupa akta autentik. Keseluruhan alat bukti tersebut telah bercap pos (nazegelen) dan sesuai dengan aslinya, dan secara materiil bukti bertanda {berkaitan} tersebut berkaitan dengan perkara ini sehingga sesuai maksud Pasal 1888 KUH Perdata jo. Pasal 3 Ayat (1) huruf b Undang-Undang Nomor 10 Tahun 2020 tentang Bea Meterai, dengan demikian bukti surat yang diajukan oleh {para}{pihak} tersebut memenuhi syarat formil sehingga dapat diterima sebagai alat bukti dan dapat dipertimbangkan lebih lanjut;",
+   "asal": [
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03a] [Tolak] DK - (Anak P Cowok) Calon Istri Belum Hamil, Hanya Berpacaran.rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03b] [Tolak] DK - (Anak P Cewek) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03c] [Tolak] DK - (Anak P Cowok) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    }
+   ],
+   "syarat": "lengkap",
+   "kelompok": true,
+   "butuh": [
+    "fotokopi"
+   ]
+  },
+  {
+   "id": "dk-cocok-tidak",
+   "kunci": [
+    "ktp",
+    "kia",
+    "lahir",
+    "ijazah",
+    "tolak",
+    "hamil",
+    "bidan"
+   ],
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "- Bahwa bukti {kode} adalah fotokopi yang tidak dapat dicocokkan dengan aslinya;",
+   "asal": [],
+   "syarat": "cocok1",
+   "kelompok": true,
+   "sumberKhusus": "Keputusan pemilik: bukti tanpa asli cukup berbunyi \"tidak dapat dicocokkan dengan aslinya\". Bunyi tidak ada di blangko."
+  },
+  {
+   "id": "dk-cocok-tidak-lain",
+   "kunci": "*",
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "P",
+   "kategori": "pelengkap",
+   "bunyi": "- Bahwa bukti {kode} adalah fotokopi yang tidak dapat dicocokkan dengan aslinya;",
+   "asal": [],
+   "syarat": "cocok1",
+   "kelompok": true,
+   "sumberKhusus": "Keputusan pemilik: bukti tanpa asli cukup berbunyi \"tidak dapat dicocokkan dengan aslinya\". Bunyi tidak ada di blangko."
+  },
+  {
+   "id": "dk-ktp-kabul",
+   "kunci": [
+    "ktp"
+   ],
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa alat bukti {kode} merupakan Kartu Tanda Penduduk atas nama Pemohon I dan Pemohon II[[ yang memberi bukti bahwa {para}{pihak} bertempat tinggal di {alamat} yang merupakan wilayah hukum {satker}, sehingga dari segi kewenangan relatif Hakim berpendapat {satker} berwewenang untuk memeriksa dan mengadili perkara a quo]];",
+   "asal": [
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01] [Kabul] DK - (Anak P Cewek) Hamil.rtf",
+     "alinea": 4,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil.rtf",
+     "alinea": 4,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01c] [Kabul] DK - (Anak P Cewek) Alasan Mendesak Otomatis (Hamil atau Pacaran Erat).rtf",
+     "alinea": 4,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[02] [Kabul] DK - (Anak P Cewek) sudah berhubungan badan.rtf",
+     "alinea": 4,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[02] [Kabul] DK - (Anak P Cowok) sudah berhubungan badan.rtf",
+     "alinea": 4,
+     "sisiSumber": "P"
+    }
+   ],
+   "kelompok": true,
+   "maks": 2,
+   "catatan": "Blangko menulis \"berwewenang\" (salah ketik) dan tidak dibetulkan."
+  },
+  {
+   "id": "dk-ktp-tolak",
+   "kunci": [
+    "ktp"
+   ],
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "tolak"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa alat bukti {kode} merupakan Kartu Tanda Penduduk atas nama Pemohon I dan Pemohon II[[ yang memberi bukti bahwa {para}{pihak} bertempat tinggal di {alamat} yang merupakan wilayah hukum {satker}, sehingga dari segi kewenangan relatif {majelis} berpendapat {satker} berwewenang untuk memeriksa dan mengadili perkara a quo]];",
+   "asal": [
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03] [Tolak] DK - (Anak P Cewek) Belum Hamil.rtf",
+     "alinea": 4,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03a] [Tolak] DK - (Anak P Cowok) Calon Istri Belum Hamil, Hanya Berpacaran.rtf",
+     "alinea": 4,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03b] [Tolak] DK - (Anak P Cewek) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf",
+     "alinea": 4,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03c] [Tolak] DK - (Anak P Cowok) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf",
+     "alinea": 4,
+     "sisiSumber": "P"
+    }
+   ],
+   "kelompok": true,
+   "maks": 2,
+   "catatan": "Blangko menulis \"berwewenang\" (salah ketik) dan tidak dibetulkan."
+  },
+  {
+   "id": "dk-kia",
+   "kunci": [
+    "kia"
+   ],
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa bukti {kode} merupakan bukti yang menjelaskan identitas kependudukan anak {para}{pihak}[[ bernama {anak}]][[ yang membuktikan bahwa {anak} saat ini berusia {usiaAnak} dan beragama Islam]];",
+   "asal": [
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01] [Kabul] DK - (Anak P Cewek) Hamil.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01c] [Kabul] DK - (Anak P Cewek) Alasan Mendesak Otomatis (Hamil atau Pacaran Erat).rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[02] [Kabul] DK - (Anak P Cewek) sudah berhubungan badan.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[02] [Kabul] DK - (Anak P Cowok) sudah berhubungan badan.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03] [Tolak] DK - (Anak P Cewek) Belum Hamil.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03a] [Tolak] DK - (Anak P Cowok) Calon Istri Belum Hamil, Hanya Berpacaran.rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03b] [Tolak] DK - (Anak P Cewek) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03c] [Tolak] DK - (Anak P Cowok) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf",
+     "alinea": 5,
+     "sisiSumber": "P"
+    }
+   ]
+  },
+  {
+   "id": "dk-lahir-kabul",
+   "kunci": [
+    "lahir"
+   ],
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa bukti {kode}[[ dihubungkan dengan bukti {kodeKeluarga}]] telah menjelaskan bahwa {anak} adalah anak kandung dari pasangan suami istri[[ yang lahir pada tanggal {tglLahirAnak}]], sehingga berdasarkan Pasal 6 ayat (1) Peraturan Mahkamah Agung Republik Indonesia Nomor 5 Tahun 2019, {para}{pihak} memiliki legal standing dalam perkara a quo;",
+   "asal": [
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01] [Kabul] DK - (Anak P Cewek) Hamil.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01c] [Kabul] DK - (Anak P Cewek) Alasan Mendesak Otomatis (Hamil atau Pacaran Erat).rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[02] [Kabul] DK - (Anak P Cewek) sudah berhubungan badan.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[02] [Kabul] DK - (Anak P Cowok) sudah berhubungan badan.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    }
+   ],
+   "butuh": [
+    "anak"
+   ]
+  },
+  {
+   "id": "dk-lahir-tolak",
+   "kunci": [
+    "lahir"
+   ],
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "tolak"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa bukti {kode}[[ dihubungkan dengan bukti {kodeKeluarga}]] telah menjelaskan bahwa {anak} adalah anak kandung dari pasangan suami istri[[ yang lahir pada tanggal {tglLahirAnak}]], sehingga berdasarkan Pasal 6 Ayat (1) Peraturan Mahkamah Agung Republik Indonesia Nomor 5 Tahun 2019, {para}{pihak} memiliki legal standing dalam perkara a quo;",
+   "asal": [
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03] [Tolak] DK - (Anak P Cewek) Belum Hamil.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03a] [Tolak] DK - (Anak P Cowok) Calon Istri Belum Hamil, Hanya Berpacaran.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03b] [Tolak] DK - (Anak P Cewek) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03c] [Tolak] DK - (Anak P Cowok) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    }
+   ],
+   "butuh": [
+    "anak"
+   ]
+  },
+  {
+   "id": "dk-ijazah-kabul",
+   "kunci": [
+    "ijazah"
+   ],
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa bukti {kode} membuktikan bahwa anak {para}{pihak} bernama {anak}[[ telah menyelesaikan pendidikan sampai tingkat {pendidikan} pada tanggal {tglIjazah}]];",
+   "asal": [
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01] [Kabul] DK - (Anak P Cewek) Hamil.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01c] [Kabul] DK - (Anak P Cewek) Alasan Mendesak Otomatis (Hamil atau Pacaran Erat).rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[02] [Kabul] DK - (Anak P Cewek) sudah berhubungan badan.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[02] [Kabul] DK - (Anak P Cowok) sudah berhubungan badan.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    }
+   ],
+   "butuh": [
+    "anak"
+   ]
+  },
+  {
+   "id": "dk-ijazah-tolak-p",
+   "kunci": [
+    "ijazah"
+   ],
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "tolak"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa bukti {kode} membuktikan bahwa anak {para}{pihak} bernama {anak}[[ telah menyelesaikan pendidikan sampai tingkat {pendidikan} pada tanggal {tglIjazah}]];",
+   "asal": [
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03] [Tolak] DK - (Anak P Cewek) Belum Hamil.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03b] [Tolak] DK - (Anak P Cewek) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    }
+   ],
+   "anak": "P",
+   "butuh": [
+    "anak"
+   ]
+  },
+  {
+   "id": "dk-ijazah-tolak-l",
+   "kunci": [
+    "ijazah"
+   ],
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "tolak"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa bukti {kode} membuktikan tingkat pendidikan anak {para}{pihak} bernama {anak};",
+   "asal": [
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03a] [Tolak] DK - (Anak P Cowok) Calon Istri Belum Hamil, Hanya Berpacaran.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03c] [Tolak] DK - (Anak P Cowok) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    }
+   ],
+   "anak": "L",
+   "butuh": [
+    "anak"
+   ]
+  },
+  {
+   "id": "dk-kua-kabul",
+   "kunci": [
+    "tolak"
+   ],
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa dari bukti {kode} terbukti permohonan {para}{pihak} untuk menikahkan anaknya bernama {anak} dengan {calon} telah ditolak oleh {oleh} karena anak {para}{pihak} belum berumur 19 tahun. Dan dari bukti tersebut, terbukti juga bahwa syarat perkawinan telah terpenuhi kecuali persyaratan usia minimal bagi calon pengantin perempuan;",
+   "asal": [
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01] [Kabul] DK - (Anak P Cewek) Hamil.rtf",
+     "alinea": 10,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil.rtf",
+     "alinea": 10,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[02] [Kabul] DK - (Anak P Cewek) sudah berhubungan badan.rtf",
+     "alinea": 10,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[02] [Kabul] DK - (Anak P Cowok) sudah berhubungan badan.rtf",
+     "alinea": 10,
+     "sisiSumber": "P"
+    }
+   ],
+   "butuh": [
+    "anak",
+    "calon",
+    "oleh"
+   ]
+  },
+  {
+   "id": "dk-kua-tolak-p",
+   "kunci": [
+    "tolak"
+   ],
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "tolak"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa dari bukti {kode} terbukti permohonan {para}{pihak} untuk menikahkan anaknya bernama {anak} dengan {calon} telah ditolak oleh {oleh} karena anak {para}{pihak} belum berumur 19 tahun. Dan dari bukti tersebut, terbukti juga bahwa syarat perkawinan telah terpenuhi kecuali persyaratan usia minimal bagi calon pengantin perempuan;",
+   "asal": [
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03] [Tolak] DK - (Anak P Cewek) Belum Hamil.rtf",
+     "alinea": 10,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03b] [Tolak] DK - (Anak P Cewek) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf",
+     "alinea": 10,
+     "sisiSumber": "P"
+    }
+   ],
+   "anak": "P",
+   "butuh": [
+    "anak",
+    "calon",
+    "oleh"
+   ]
+  },
+  {
+   "id": "dk-kua-tolak-l",
+   "kunci": [
+    "tolak"
+   ],
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "tolak"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa dari bukti {kode} terbukti permohonan {para}{pihak} untuk menikahkan anaknya bernama {anak} dengan {calon} telah ditolak oleh {oleh} karena anak {para}{pihak} belum berumur 19 tahun. Dan dari bukti tersebut, terbukti juga bahwa syarat perkawinan telah terpenuhi kecuali persyaratan usia minimal bagi calon pengantin laki-laki;",
+   "asal": [
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03a] [Tolak] DK - (Anak P Cowok) Calon Istri Belum Hamil, Hanya Berpacaran.rtf",
+     "alinea": 10,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[03c] [Tolak] DK - (Anak P Cowok) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf",
+     "alinea": 10,
+     "sisiSumber": "P"
+    }
+   ],
+   "anak": "L",
+   "butuh": [
+    "anak",
+    "calon",
+    "oleh"
+   ]
+  },
+  {
+   "id": "dk-hamil-p",
+   "kunci": [
+    "hamil",
+    "bidan"
+   ],
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa bukti {kode} merupakan akta otentik berupa Surat Keterangan atas nama {anak} yang dikeluarkan oleh {oleh}, yang melakukan pemeriksaan kesehatan dan menerangkan bahwa Anak Para {pihak} yang bernama {anak} dalam kondisi hamil;",
+   "asal": [
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01] [Kabul] DK - (Anak P Cewek) Hamil.rtf",
+     "alinea": 11,
+     "sisiSumber": "P"
+    }
+   ],
+   "anak": "P",
+   "butuh": [
+    "anak",
+    "oleh"
+   ]
+  },
+  {
+   "id": "dk-hamil-l",
+   "kunci": [
+    "hamil",
+    "bidan"
+   ],
+   "perkara": [
+    "DK"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa bukti {kode} merupakan akta otentik berupa Surat Keterangan atas nama {calon} yang dikeluarkan oleh {oleh}, yang melakukan pemeriksaan kesehatan dan menerangkan bahwa Anak Para {pihak} yang bernama {calon} dalam kondisi hamil;",
+   "asal": [
+    {
+     "folder": "3 Dispensasi Kawin",
+     "berkas": "[01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil.rtf",
+     "alinea": 11,
+     "sisiSumber": "P"
+    }
+   ],
+   "anak": "L",
+   "butuh": [
+    "calon",
+    "oleh"
+   ],
+   "catatan": "Pada blangko Anak Cowok, yang hamil adalah calon istri, tetapi kalimatnya tetap menyebut Anak Para Pemohon."
   }
  ]
 }
