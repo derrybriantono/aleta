@@ -8,7 +8,8 @@
  *  - bagian pembuktian = alinea sesudah judul pertimbangan (TENTANG PERTIMBANGAN HUKUM / PERTIMBANGAN HUKUM); daftar bukti di duduk perkara
  *    ("diberi tanda P.n serta diberi tanggal") ada sebelum judul dan tidak dihitung;
  *  - paragraf yang kodenya sudah disebut di pertimbangan (kata utuh, termasuk daftar "P.1 dan P.2" dan rentang "P.1 sampai P.3") tidak disisipkan;
- *  - sisipan ditaruh tepat sebelum penutup alinea penilaian bukti terakhir di bagian pembuktian, berformat sama dengan alinea itu;
+ *  - sisipan ditaruh tepat sebelum penutup alinea penilaian bukti terakhir di bagian pembuktian; berformat sama dengan alinea itu bila sejenis,
+ *    dan berformat jenisnya sendiri bila lain ("- Bahwa" = tanda hubung, tab, alinea menggantung; "Menimbang" = baris pertama menjorok), lihat catatan format di bawah;
  *  - ragu, atau hasil tidak lolos pemeriksaan ulang: RTF asli dipulangkan tanpa berubah.
  * Hanya paragraf yang dipilih pemanggil yang masuk (otomatis, ditambah usulan yang dicentang); usulan yang belum disetujui pemilik tidak pernah ke sini.
  */
@@ -239,6 +240,89 @@ export function selisihKurungRtf(rtf: string): number {
   return n;
 }
 
+
+/* ------------------------------------------------------------------------------------------------------------------------------
+ * Format alinea sisipan (7 Nov 2026). Blangko memakai dua bentuk alinea penilaian bukti:
+ *  - "Menimbang, bahwa ...": baris pertama menjorok (\fi720), baris berikutnya rata kiri (\li0), tanpa tab;
+ *  - "- Bahwa ...": tanda "-", tab, lalu teks; baris pertama \fi-384 dan seluruh alinea \li384 (menggantung, baris berikutnya sejajar teks).
+ * Sisipan "- Bahwa" harus berbentuk kedua walau jangkarnya "Menimbang", dan sebaliknya. Perintah paragraf diambil dari alinea sejenis di naskah itu
+ * sendiri (yang paling sering dipakai di bagian pertimbangan); bila tidak ada, untuk "- Bahwa" diturunkan dari jangkar. Hanya perintah paragraf
+ * yang disalin (bukan huruf), supaya font dan warna tetap mengikuti grup tempat sisipan ditaruh.
+ * ---------------------------------------------------------------------------------------------------------------------------- */
+type JenisAlinea = "bahwa" | "menimbang" | "lain";
+const jenisAlinea = (t: string): JenisAlinea => (/^\s*[-–—•*]\s*Bahwa\b/i.test(t) ? "bahwa" : /^\s*Menimbang\b/i.test(t) ? "menimbang" : "lain");
+const PERINTAH_PARAGRAF =
+  /^(?:s\d+|q[lrcjd]|fi-?\d+|li-?\d+|ri-?\d+|lin-?\d+|rin-?\d+|sb\d+|sa\d+|sl-?\d+|slmult[01]|sbauto[01]|saauto[01]|widctlpar|nowidctlpar|itap\d+|tx-?\d+|tqr|tqc|tqdec|tldot|tlhyph|tlul|tlth|tleq|keep|keepn|noline|adjustright|faauto|hyphpar[01]?|contextualspace|nowwrap|ls\d+|ilvl\d+|outlinelevel\d+|rtlpar|ltrpar|aspalpha[01]?|aspnum[01]?|nosnaplinegrid)$/;
+
+/** Perintah paragraf satu alinea ("\pard\s50\qj\fi720..."), tanpa perintah huruf. null bila tidak terbaca atau alinea di dalam tabel. */
+export function perintahParagraf(baca: string, p: { src?: Array<[number, number, number]> }): string | null {
+  const awalTeks = p.src && p.src.length ? p.src[0][0] : -1;
+  if (awalTeks < 0) return null;
+  const dari = baca.lastIndexOf("\\pard", awalTeks);
+  if (dari < 0) return null;
+  let akhir = baca.indexOf("{", dari);
+  if (akhir < 0 || akhir > awalTeks) akhir = awalTeks;
+  const seg = baca.slice(dari + 5, akhir);
+  if (/\\intbl(?![a-zA-Z])/.test(seg)) return null;
+  const kata = [...seg.matchAll(/\\([a-zA-Z]+-?\d*)/g)].map((m) => m[1]).filter((k) => PERINTAH_PARAGRAF.test(k));
+  return kata.length ? `\\pard${kata.map((k) => `\\${k}`).join("")}` : null;
+}
+
+/** Nilai paling sering; seri dimenangkan yang paling dekat dengan `titik`. */
+function paling<T extends string>(daftar: Array<{ nilai: T; indeks: number }>, titik: number): T | null {
+  const hitung = new Map<T, { n: number; dekat: number }>();
+  for (const d of daftar) {
+    const e = hitung.get(d.nilai) ?? { n: 0, dekat: Infinity };
+    e.n += 1;
+    e.dekat = Math.min(e.dekat, Math.abs(d.indeks - titik));
+    hitung.set(d.nilai, e);
+  }
+  let terbaik: T | null = null;
+  let e0: { n: number; dekat: number } | null = null;
+  for (const [nilai, e] of hitung) {
+    if (!e0 || e.n > e0.n || (e.n === e0.n && e.dekat < e0.dekat)) {
+      terbaik = nilai;
+      e0 = e;
+    }
+  }
+  return terbaik;
+}
+
+/** Perintah paragraf alinea sejenis di bagian pertimbangan; "- Bahwa" memilih yang menilai bukti lebih dulu. null bila tidak ada. */
+function formatSejenis(baca: string, ps: ReadonlyArray<{ teks: string; src?: Array<[number, number, number]> }>, bagian: BagianNaskah, jenis: JenisAlinea): string | null {
+  const calon: Array<{ nilai: string; indeks: number }> = [];
+  for (let i = bagian.judul + 1; i < bagian.akhir; i += 1) {
+    if (jenisAlinea(ps[i].teks) !== jenis) continue;
+    const f = perintahParagraf(baca, ps[i]);
+    if (f) calon.push({ nilai: f, indeks: i });
+  }
+  if (jenis === "bahwa") {
+    const bukti: Array<{ nilai: string; indeks: number }> = [];
+    for (const c of calon) if (PENILAIAN.test(ps[c.indeks].teks)) bukti.push(c);
+    if (bukti.length) return paling(bukti, bagian.jangkar);
+  }
+  return paling(calon, bagian.jangkar);
+}
+
+/** Dari perintah jangkar: alinea menggantung 384 twips ("- Bahwa"). Dipakai hanya bila naskah tidak punya alinea "- Bahwa" sendiri. */
+function turunkanMenggantung(dariJangkar: string): string {
+  let f = dariJangkar;
+  for (const [nama, nilai] of [["fi", "-384"], ["li", "384"], ["lin", "384"]] as const) {
+    const re = new RegExp(String.raw`\\${nama}-?\d+(?!\d)`);
+    f = re.test(f) ? f.replace(re, `\\${nama}${nilai}`) : `${f}\\${nama}${nilai}`;
+  }
+  return f;
+}
+
+/** Awalan "- " bunyi "- Bahwa" menjadi tanda hubung + tab (bentuk blangko); bunyi lain apa adanya. */
+function teksSisipan(bunyi: string, jenis: JenisAlinea): string {
+  if (jenis === "bahwa") {
+    const m = /^([-–—•*])\s+(\S[\s\S]*)$/.exec(bunyi);
+    if (m) return `${teksKeRtfSisip(m[1])}\\tab ${teksKeRtfSisip(m[2])}`;
+  }
+  return teksKeRtfSisip(bunyi);
+}
+
 /** Memasukkan paragraf bukti ke RTF (string latin1: satu karakter per bita). Lihat catatan berkas. */
 export function sisipkanParagrafBukti(rtfLatin1: string, paragraf: ReadonlyArray<ParagrafSisip>, opsi?: OpsiSisip): HasilSisip {
   const asli = String(rtfLatin1 == null ? "" : rtfLatin1);
@@ -276,15 +360,46 @@ export function sisipkanParagrafBukti(rtfLatin1: string, paragraf: ReadonlyArray
     if (!m || m[1] !== "par") return semuaTidak(SEBAB_SISIP.letakPenutup, baru);
     const pos = m.index;
 
-    // Percobaan pertama: format persis jangkar. Bila jangkar berwarna merah (teks blangko yang belum diperiksa), sisipan ditulis hitam (\cf0).
+    // Format tiap sisipan. Sejenis dengan jangkar: mewarisi (tanpa perintah). Lain jenis: perintah paragraf eksplisit dari alinea sejenis di naskah;
+    // "- Bahwa" tanpa alinea sejenis diturunkan dari jangkar. Tak ada sumber: mewarisi.
+    // Warna jangkar: bila merah (teks blangko yang belum diperiksa), sisipan ditulis hitam (\cf0).
     const cfJangkar = src[src.length - 1][2];
+    const jenisJangkar = jenisAlinea(ps[bagian.jangkar].teks);
+    const perintahJangkar = perintahParagraf(baca, jangkar);
+    const sumberFormat = new Map<JenisAlinea, string | null>();
+    const formatUntuk = (jenis: JenisAlinea): string | null => {
+      if (jenis === "lain" || jenis === jenisJangkar || !perintahJangkar) return null;
+      if (!sumberFormat.has(jenis)) {
+        const f = formatSejenis(baca, ps, bagian, jenis) ?? (jenis === "bahwa" ? turunkanMenggantung(perintahJangkar) : null);
+        sumberFormat.set(jenis, f === perintahJangkar ? null : f);
+      }
+      return sumberFormat.get(jenis) ?? null;
+    };
+    const jenisKartu = baru.map((c) => jenisAlinea(c.bunyi));
+    // Perintah hanya ditulis bila berbeda dari yang sedang berlaku (mula-mula milik jangkar), supaya sisipan sejenis jangkar tetap mewarisi.
+    let berlaku = perintahJangkar;
+    const perintahKartu = jenisKartu.map((j) => {
+      const tujuan = formatUntuk(j) ?? perintahJangkar;
+      if (!tujuan || tujuan === berlaku) return null;
+      berlaku = tujuan;
+      return tujuan;
+    });
+    // Alinea sesudah sisipan memakai perintahnya sendiri bila diawali \pard; bila tidak, perintah jangkar dipulihkan tepat sesudah penutup jangkar.
+    const sesudahPenutup = baca.slice(pos + m[0].length, pos + m[0].length + 400);
+    const awalBerikut = /^[\s}]*/.exec(sesudahPenutup)?.[0].length ?? 0;
+    const berikutPunyaPard = /^[\s}{]*\\pard(?![a-zA-Z])/.test(sesudahPenutup);
+    const perluPulih = berlaku !== perintahJangkar && !berikutPunyaPard;
+    const pulih = perluPulih && perintahJangkar ? `${perintahJangkar} ` : "";
+    const posPulih = pos + m[0].length + awalBerikut;
+
     const coba = (awalan: string, cfDiharapkan: number): HasilSisip | null => {
-      const sisipan = baru.map((c, i) => `\\par ${i === 0 ? awalan : ""}${teksKeRtfSisip(c.bunyi)}`).join("");
-      const hasilRtf = asli.slice(0, pos) + sisipan + asli.slice(pos);
-      const hasilBaca = baca.slice(0, pos) + sisipan + baca.slice(pos);
+      const sisipan = baru.map((c, i) => `\\par ${perintahKartu[i] ? `${perintahKartu[i]} ` : ""}${i === 0 ? awalan : ""}${teksSisipan(c.bunyi, jenisKartu[i])}`).join("");
+      const ekor = asli.slice(pos, posPulih) + pulih + asli.slice(posPulih);
+      const hasilRtf = asli.slice(0, pos) + sisipan + ekor;
+      const hasilBaca = baca.slice(0, pos) + sisipan + baca.slice(pos, posPulih) + pulih + baca.slice(posPulih);
       // Pemeriksaan ulang: gagal satu saja = tidak dipakai.
-      if (hasilRtf.length !== asli.length + sisipan.length) return null;
-      if (hasilRtf.slice(0, pos) !== asli.slice(0, pos) || hasilRtf.slice(pos + sisipan.length) !== asli.slice(pos)) return null;
+      if (hasilRtf.length !== asli.length + sisipan.length + pulih.length) return null;
+      if (hasilRtf.slice(0, pos) !== asli.slice(0, pos) || hasilRtf.slice(pos + sisipan.length) !== ekor) return null;
       if (selisihKurungRtf(sisipan) !== 0 || selisihKurungRtf(hasilRtf) !== selisihKurungRtf(asli)) return null;
       const ps2 = bacaRtfParagraf(hasilBaca, true);
       const k = baru.length;
