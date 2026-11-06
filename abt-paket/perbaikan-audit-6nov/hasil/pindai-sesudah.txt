@@ -1,0 +1,3 @@
+RTF sesudah dipindai: 105; RTF baru: 1
+TEMUAN: 0
+INFO-SKRIP	pasang-satker.sh	nama kontainer basis data (sama dengan paket pendahulu), bukan isi blangko

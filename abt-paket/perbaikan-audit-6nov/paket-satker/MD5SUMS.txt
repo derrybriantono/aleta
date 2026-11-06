@@ -1,0 +1,9 @@
+6d1dfeb4b2a9a1c752b94c15f5f71d1d *tambal_rtf.py
+02a4e3403ae5873f47d08809c864e3e2 *daftar-tambal.tsv
+c66b0deca445a5f7c6ddb0599ed953ad *daftar-baru.tsv
+5569d50ed26ae1bb4399ce1b6a92fe11 *tambal.tsv
+5ad727b76ba67c4ec0a68303dfbf6fed *rtf-baru/N0001.rtf
+40b74df416962a53651dfea80f5c3a82 *pasang-satker.sh
+831fb4bbdf0cb07b8b398aede074eed3 *pulih-satker.sh
+2ce8b1e595bafd12a52096b6ffff4199 *abt-perbaikan-audit-6nov-PRASYARAT.sql
+69f2091c5ca9810c49fed4b16d41f696 *harap.txt

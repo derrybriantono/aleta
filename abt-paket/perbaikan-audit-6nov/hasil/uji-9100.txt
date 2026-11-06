@@ -1,0 +1,4 @@
+baris 303 sebelum: 0
+KOSONG : {"status":"terisi","polos":".............................. tanggal .................................................."}
+TERISI : {"status":"terisi","polos":"Kamis tanggal 05 November 2026"}
+baris 303 sesudah: 0

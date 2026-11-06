@@ -1,0 +1,16 @@
+RENDER sesudah: 105 berkas, takada 0, galat 0, galat proses 0, marker tersisa 0
+RENDER sebelum: 104 berkas, takada 0, galat 0, galat proses 0
+CT-01    11/11 lulus
+CT-01b   11/11 lulus
+CT-02a   9/9 lulus
+CT-02b   8/8 lulus
+CT-03    1/1 lulus
+CG-07    16/16 lulus
+KW-01    7/7 lulus
+KW-02    2/2 lulus
+KW-07    5/5 lulus
+KW-08    14/14 lulus
+BK-01    2/2 lulus
+BK-06    1/1 lulus
+AN-01    64/64 lulus
+S-13     1/1 lulus

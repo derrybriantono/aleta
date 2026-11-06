@@ -1,0 +1,17 @@
+S-13	1 berkas
+CT-01	11 berkas
+CT-02a	9 berkas
+CT-02b	8 berkas
+CT-03	1 berkas
+CG-07	16 berkas
+KW-01	7 berkas
+KW-02	2 berkas
+KW-07	5 berkas
+KW-08	14 berkas
+BK-01	2 berkas
+BK-06	2 berkas
+AN-01	64 berkas
+CT-02 gabungan	11 berkas
+BERKAS DIUBAH	104
+BERKAS BARU	1
+POTONGAN	312

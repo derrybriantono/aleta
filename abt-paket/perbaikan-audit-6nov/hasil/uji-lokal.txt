@@ -1,0 +1,63 @@
+SIDIK AWAL 114805d022839d30dc40dab6530d1856 ; VARIABEL AWAL 3053 80298ccc7da65429a3cc6765dc062856 
+== 1. pasang pertama
+    PRASYARAT COCOK (9|2)
+    SIAP=105
+    BERKAS SIAP
+    BARU=1 TAMBAL=104
+    BERKAS COCOK
+    SELESAI - paket abt-perbaikan-audit-6nov terpasang. Cadangan: /d/aleta-dev/wt/w223/abt-paket/perbaikan-audit-6nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w223/abt-paket/perbaikan-audit-6nov/paket-satker/pulih-satker.sh
+    periksa: BERKAS COCOK
+== 2. pasang ulang (idempoten)
+    PRASYARAT COCOK (9|2)
+    SUDAH=105
+    BERKAS SIAP
+    SUDAH=105
+    BERKAS COCOK
+    SELESAI - paket abt-perbaikan-audit-6nov terpasang. Cadangan: /d/aleta-dev/wt/w223/abt-paket/perbaikan-audit-6nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w223/abt-paket/perbaikan-audit-6nov/paket-satker/pulih-satker.sh
+    SIDIK & VARIABEL TETAP
+    VARIABEL TIDAK BERUBAH OLEH PASANG
+== 3. pulih
+    PULIH=105
+    BERKAS PULIH
+    PULIH COCOK
+    SIDIK BERKAS = AWAL
+    VARIABEL = AWAL
+    dipindah ke cadangan: N0001.rtf
+== 4. pasang lagi sesudah pulih
+    PRASYARAT COCOK (9|2)
+    SIAP=105
+    BERKAS SIAP
+    BARU=1 TAMBAL=104
+    BERKAS COCOK
+    SELESAI - paket abt-perbaikan-audit-6nov terpasang. Cadangan: /d/aleta-dev/wt/w223/abt-paket/perbaikan-audit-6nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w223/abt-paket/perbaikan-audit-6nov/paket-satker/pulih-satker.sh
+    SAMA DENGAN PASANG PERTAMA
+    PULIH COCOK
+== 5. satu berkas disunting -> BERHENTI tanpa ubahan
+    PRASYARAT COCOK (9|2)
+    GAGAL=1 SIAP=104
+    BERKAS TIDAK SIAP
+    GAGAL: berkas tujuan tidak sama dengan keadaan server sesudah saksi-tanya-jawab-43-5nov - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 6. paket pendahulu belum terpasang (berkas sebelum a5-merah-5nov) -> BERHENTI tanpa ubahan
+    GAGAL=48 SIAP=57
+    BERKAS TIDAK SIAP
+    GAGAL: berkas tujuan tidak sama dengan keadaan server sesudah saksi-tanya-jawab-43-5nov - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 7. berkas lain bernama [4] sudah ada -> BERHENTI tanpa ubahan
+    PRASYARAT COCOK (9|2)
+    GAGAL	derry_briantono/ALUR 10 Cerai Talak Sidang Ikrar Talak/[4] BAS Ikrar Talak - P & T Tidak Hadir, Tunda Tenggang Waktu 6 Bulan.rtf	sudah ada berkas lain dengan nama sama
+    GAGAL=1 SIAP=104
+    BERKAS TIDAK SIAP
+    GAGAL: berkas tujuan tidak sama dengan keadaan server sesudah saksi-tanya-jawab-43-5nov - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 8. rumus 9100 berubah -> PRASYARAT BERHENTI tanpa ubahan
+    GAGAL: prasyarat '9|1' (harus '9|2'): variabel yang dirujuk atau rumus 9100/8509 tidak sama dengan dasar paket, atau a5-kelompok-5nov / saksi-tanya-jawab-43-5nov belum terpasang - TIDAK ada yang diubah. Arti angka: lihat abt-perbaikan-audit-6nov-PRASYARAT.sql
+    BERKAS TIDAK BERUBAH
+    VARIABEL = AWAL (rumus 9100 dikembalikan)
+== 9. disunting sesudah pasang lalu pulih -> dibiarkan
+    BIARKAN=1 PULIH=104
+    BERKAS PULIH SEBAGIAN
+    GAGAL=1 SIAP=104
+    BERKAS TIDAK SIAP
+    PULIH SEBAGIAN
+AKHIR: VARIABEL = AWAL

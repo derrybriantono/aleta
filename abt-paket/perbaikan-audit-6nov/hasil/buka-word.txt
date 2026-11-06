@@ -1,0 +1,6 @@
+Word 16 membuka berkas hasil (105) dan berkas dasar (104), baca saja, tanpa menyimpan:
+sesudah BUKA 105 GALAT 0
+sebelum BUKA 104 GALAT 0
+halaman beda 2
+2 Itsbat Nikah\[01b] [Kabul] IN Itsbat Terpadu.rtf 12 -> 11
+2 Itsbat Nikah\[01f] [Kabul] IN Kabul (Hadir Tapi Lupa Prosesi Nikah).rtf 12 -> 11
