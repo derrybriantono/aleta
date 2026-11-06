@@ -40,6 +40,7 @@ export const PATCH_NOTES: PatchNote[] = [
     changed: [
       "Warna ALETA ABT mengikuti tema Blangko ABT by Derry.",
       "Mesin isian membuang tanda kurung kurawal kosong dan memberi peringatan tanggal yang tidak wajar.",
+      "Cetak ALETA ABT hanya ditahan oleh ketikan dan tanya jawab wajib yang kosong; data yang belum ada di SIPP tampil sebagai perlu dilihat.",
     ],
     fixed: [
       "Berita acara berbentuk PDF tidak lagi dapat dijadikan PDF salinan putusan.",
