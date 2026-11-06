@@ -1,0 +1,459 @@
+{
+ "versi": 1,
+ "sumber": "Blangko ABT by Derry Briantono, isi blangko tanpa data perkara",
+ "dibuat": "2026-11-06",
+ "kartu": [
+  {
+   "id": "verstek-ktp",
+   "kunci": [
+    "ktp"
+   ],
+   "cerai": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa alat bukti {kode} merupakan keterangan mengenai identitas dan domisili {pihak} yang ternyata sesuai dengan fakta di persidangan. Oleh karenanya maka {satker} berwenang secara relatif memeriksa dan mengadili perkara ini;",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[01] [Kabul Verstek] Cerai (Format Lengkap).rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[01] [Kabul Verstek] Cerai (Format Lengkap).rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[01ab] [Tolak Verstek] Cerai - Kurang 6 Bulan SEMA 1 Tahun 2022.rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[01ab] [Tolak Verstek] Cerai - Kurang 6 Bulan SEMA 1 Tahun 2022.rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    }
+   ]
+  },
+  {
+   "id": "verstek-nikah",
+   "kunci": [
+    "nikah"
+   ],
+   "cerai": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa alat bukti {kode} menunjukkan {pihak} dan {lawan} telah terikat sebagai suami istri dan belum bercerai sampai sekarang, oleh karena itu dalil {pihak} bahwa dirinya dan {lawan} telah melangsungkan pernikahan telah terbukti dan merupakan wewenang absolut Peradilan Agama;",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[01] [Kabul Verstek] Cerai (Format Lengkap).rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[01] [Kabul Verstek] Cerai (Format Lengkap).rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[01ab] [Tolak Verstek] Cerai - Kurang 6 Bulan SEMA 1 Tahun 2022.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[01ab] [Tolak Verstek] Cerai - Kurang 6 Bulan SEMA 1 Tahun 2022.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ]
+  },
+  {
+   "id": "kabul-meterai-pokok",
+   "kunci": [
+    "ktp",
+    "nikah"
+   ],
+   "cerai": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "bunyi": "- Bahwa bukti {kode} yang diajukan {pihak} telah diberi meterai cukup, telah dinazegelen, dan isinya relevan dengan materi perkara ini. Dengan demikian, bukti tersebut dapat diterima dan dipertimbangkan, sebagaimana ketentuan Pasal 3 ayat (1) jo. Pasal 5 Undang-Undang Nomor 10 Tahun 2020 tentang Bea Meterai jo. Surat Edaran Direktorat Jenderal Badan Peradilan Agama Nomor 1 Tahun 2021 tentang Penyesuaian Bea Meterai di Lingkungan Peradilan Agama;",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[02] [Kabul] CG - F.rtf",
+     "alinea": 11,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[02] [Kabul] CT - F.rtf",
+     "alinea": 11,
+     "sisiSumber": "P"
+    }
+   ],
+   "syarat": "meterai0",
+   "kelompok": true
+  },
+  {
+   "id": "kabul-cocok-pokok",
+   "kunci": [
+    "ktp",
+    "nikah"
+   ],
+   "cerai": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "bunyi": "- Bahwa bukti {kode} adalah fotokopi yang telah dicocokkan dengan aslinya yang ternyata cocok sehingga dapat dipertimbangkan lebih lanjut, sebagaimana ketentuan Pasal 1888 Kitab Undang-Undang Hukum Perdata yang pada pokoknya menyatakan bahwa kekuatan bukti tulisan adalah pada akta aslinya;",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[02] [Kabul] CG - F.rtf",
+     "alinea": 12,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[02] [Kabul] CT - F.rtf",
+     "alinea": 12,
+     "sisiSumber": "P"
+    }
+   ],
+   "syarat": "cocok0",
+   "kelompok": true
+  },
+  {
+   "id": "kabul-cocok-tidak-pokok",
+   "kunci": [
+    "ktp",
+    "nikah"
+   ],
+   "cerai": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "bunyi": "- Bahwa bukti {kode} adalah fotokopi yang tidak dapat dicocokkan dengan aslinya;",
+   "asal": [],
+   "syarat": "cocok1",
+   "kelompok": true,
+   "sumberKhusus": "Keputusan pemilik: bukti tanpa asli cukup berbunyi \"tidak dapat dicocokkan dengan aslinya\". Bunyi tidak ada di blangko."
+  },
+  {
+   "id": "kabul-akta-pokok",
+   "kunci": [
+    "ktp",
+    "nikah"
+   ],
+   "cerai": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "bunyi": "- Bahwa bukti {kode} merupakan akta autentik yang dibuat oleh pejabat yang berwenang untuk itu{{tdkbantah| serta tidak dibantah kebenarannya oleh {lawan} hal mana dapat dinilai sebagai pengakuan atas bukti (vide Yurisprudensi Mahkamah Agung nomor 986K/Sip/1971 tanggal 22 Maret 1971 dan nomor 4434K/Pdt/1986, diambil alih menjadi pertimbangan {majelis})}}, sehingga mempunyai nilai kekuatan pembuktian sempurna dan mengikat (volledig en bindende bewijskracht), sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata;",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[02] [Kabul] CG - F.rtf",
+     "alinea": 13,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[02] [Kabul] CT - F.rtf",
+     "alinea": 13,
+     "sisiSumber": "P"
+    }
+   ],
+   "syarat": "aktaOtentik",
+   "kelompok": true
+  },
+  {
+   "id": "kabul-ktp",
+   "kunci": [
+    "ktp"
+   ],
+   "cerai": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "bunyi": "- Bahwa bukti {kode} berupa fotokopi Kartu Tanda Penduduk[[ atas nama {namaTanpaBin}]] dalam perkara a quo merupakan identitas resmi penduduk {pihak} baik secara formil maupun materil (vide Pasal 1 angka 14 Undang-Undang Nomor 23 Tahun 2006 tentang Administrasi Kependudukan sebagaimana diubah dengan Undang-Undang Nomor 24 Tahun 2013), sehingga berdasarkan bukti {kode} tersebut, {majelis} berpendapat bahwa {pihak} adalah pihak prinsipal yang memiliki kewenangan dan kepentingan hukum langsung dengan pokok perkara a quo (legitima standi in judicio);",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[02] [Kabul] CG - F.rtf",
+     "alinea": 14,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[02] [Kabul] CT - F.rtf",
+     "alinea": 14,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[02] [Kabul] CG - F.rtf",
+     "alinea": 23,
+     "sisiSumber": "T"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[02] [Kabul] CT - F.rtf",
+     "alinea": 23,
+     "sisiSumber": "T"
+    }
+   ],
+   "catatan": "Dua sisi memakai satu bunyi: sisi T di blangko sama dengan sisi P dengan pihak ditukar."
+  },
+  {
+   "id": "kabul-nikah-p",
+   "kunci": [
+    "nikah"
+   ],
+   "cerai": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "- Bahwa bukti {kode} berupa fotokopi Kutipan Akta Nikah dalam perkara a quo merupakan bukti utama (prima facie evidence) terhadap suatu perkawinan berdasarkan agama dan perundang-undangan. Berdasarkan bukti tersebut, harus dinyatakan terbukti {pihak} dan {lawan} adalah suami istri sah [[yang menikah pada tanggal {tglNikah} ]]yang hingga kini belum pernah bercerai. Selanjutnya dari hubungan perkawinan tersebut dijadikan alas dasar oleh {pihak} untuk mengajukan {perkara} cerai ini, maka ketentuan Pasal 7 ayat (1) Kompilasi Hukum Islam telah terpenuhi, sehingga {pihak} memiliki kapasitas sebagai pihak dan mempunyai legal standing untuk mengajukan {perkara} cerai terhadap {lawan};",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[02a] [Kabul] CG - T Tidak Hadir Setelah Mediasi - F.rtf",
+     "alinea": 9,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[02a] [Kabul] CT - T Tidak Hadir Setelah Mediasi - F.rtf",
+     "alinea": 9,
+     "sisiSumber": "P"
+    }
+   ],
+   "catatan": "Memakai alinea dengan penanda jenis perkara. Blangko [02] CT - F menulis \"gugatan cerai\" tetap pada perkara permohonan: tidak dipakai."
+  },
+  {
+   "id": "kabul-nikah-t",
+   "kunci": [
+    "nikah"
+   ],
+   "cerai": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "T",
+   "kategori": "pokok",
+   "bunyi": "- Bahwa bukti {kode} berupa fotokopi Kutipan Akta Nikah dalam perkara a quo merupakan bukti utama (prima facie evidence) terhadap suatu perkawinan berdasarkan agama dan perundang-undangan. Berdasarkan bukti tersebut, harus dinyatakan terbukti {pihak} dan {lawan} adalah suami istri sah [[yang menikah pada tanggal {tglNikah} ]]yang hingga kini belum pernah bercerai;",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[02] [Kabul] CG - F.rtf",
+     "alinea": 24,
+     "sisiSumber": "T"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[02] [Kabul] CT - F.rtf",
+     "alinea": 24,
+     "sisiSumber": "T"
+    }
+   ]
+  },
+  {
+   "id": "tolak-surat-nikah",
+   "kunci": [
+    "ktp",
+    "nikah"
+   ],
+   "cerai": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "tolak"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "bunyi": "Menimbang, bahwa bukti-bukti surat yang diajukan {pihak} telah diberi meterai cukup, telah dinazegelen, dan telah dicocokkan dengan aslinya, sehingga dapat diterima dan dipertimbangkan sebagaimana ketentuan Pasal 3 ayat (1) jo. Pasal 5 Undang-Undang Nomor 10 Tahun 2020 tentang Bea Meterai dan Pasal 1888 Kitab Undang-Undang Hukum Perdata, dan berdasarkan bukti tersebut harus dinyatakan terbukti {pihak} dan {lawan} adalah suami istri sah yang hingga kini belum pernah bercerai;",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    }
+   ],
+   "syarat": "lengkap",
+   "kelompok": true,
+   "catatan": "Satu alinea untuk seluruh bukti surat pokok sisi P; berlaku bila meterai dan pencocokan seperti bunyinya."
+  },
+  {
+   "id": "kabul-meterai-lain",
+   "kunci": "*",
+   "cerai": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "PT",
+   "kategori": "pelengkap",
+   "bunyi": "- Bahwa bukti {kode} yang diajukan {pihak} telah diberi meterai cukup, telah dinazegelen, dan isinya relevan dengan materi perkara ini. Dengan demikian, bukti tersebut dapat diterima dan dipertimbangkan, sebagaimana ketentuan Pasal 3 ayat (1) jo. Pasal 5 Undang-Undang Nomor 10 Tahun 2020 tentang Bea Meterai jo. Surat Edaran Direktorat Jenderal Badan Peradilan Agama Nomor 1 Tahun 2021 tentang Penyesuaian Bea Meterai di Lingkungan Peradilan Agama;",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[02] [Kabul] CG - F.rtf",
+     "alinea": 11,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[02] [Kabul] CT - F.rtf",
+     "alinea": 11,
+     "sisiSumber": "P"
+    }
+   ],
+   "syarat": "meterai0",
+   "kelompok": true
+  },
+  {
+   "id": "kabul-cocok-lain",
+   "kunci": "*",
+   "cerai": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "PT",
+   "kategori": "pelengkap",
+   "bunyi": "- Bahwa bukti {kode} adalah fotokopi yang telah dicocokkan dengan aslinya yang ternyata cocok sehingga dapat dipertimbangkan lebih lanjut, sebagaimana ketentuan Pasal 1888 Kitab Undang-Undang Hukum Perdata yang pada pokoknya menyatakan bahwa kekuatan bukti tulisan adalah pada akta aslinya;",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[02] [Kabul] CG - F.rtf",
+     "alinea": 12,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[02] [Kabul] CT - F.rtf",
+     "alinea": 12,
+     "sisiSumber": "P"
+    }
+   ],
+   "syarat": "cocok0",
+   "kelompok": true
+  },
+  {
+   "id": "kabul-cocok-tidak-lain",
+   "kunci": "*",
+   "cerai": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "PT",
+   "kategori": "pelengkap",
+   "bunyi": "- Bahwa bukti {kode} adalah fotokopi yang tidak dapat dicocokkan dengan aslinya;",
+   "asal": [],
+   "syarat": "cocok1",
+   "kelompok": true,
+   "sumberKhusus": "Keputusan pemilik: bukti tanpa asli cukup berbunyi \"tidak dapat dicocokkan dengan aslinya\". Bunyi tidak ada di blangko."
+  },
+  {
+   "id": "kabul-akta-lain",
+   "kunci": "*",
+   "cerai": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "PT",
+   "kategori": "pelengkap",
+   "bunyi": "- Bahwa bukti {kode} merupakan akta autentik yang dibuat oleh pejabat yang berwenang untuk itu{{tdkbantah| serta tidak dibantah kebenarannya oleh {lawan} hal mana dapat dinilai sebagai pengakuan atas bukti (vide Yurisprudensi Mahkamah Agung nomor 986K/Sip/1971 tanggal 22 Maret 1971 dan nomor 4434K/Pdt/1986, diambil alih menjadi pertimbangan {majelis})}}, sehingga mempunyai nilai kekuatan pembuktian sempurna dan mengikat (volledig en bindende bewijskracht), sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata;",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[02] [Kabul] CG - F.rtf",
+     "alinea": 13,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[02] [Kabul] CT - F.rtf",
+     "alinea": 13,
+     "sisiSumber": "P"
+    }
+   ],
+   "syarat": "aktaOtentik",
+   "kelompok": true
+  }
+ ]
+}
