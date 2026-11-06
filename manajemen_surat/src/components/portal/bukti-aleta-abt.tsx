@@ -27,7 +27,7 @@ import type { RencanaSisip } from "@/lib/sisip-pertimbangan-bukti";
 
 type Dokumen = { judul: string; documentKey: string };
 type Bahan = DataSipp & { dokumen: Dokumen[]; agendaPembuktianKe?: number | null };
-type Butir = { sisi: "P" | "T"; nomor: number; baris: BarisBukti; diperiksa: boolean };
+type Butir = { sisi: "P" | "T"; nomor: number; kode: string; baris: BarisBukti; diperiksa: boolean };
 
 /**
  * Pemeriksaan alat bukti tertulis di layar cetak ALETA ABT (6 Nov 2026). Bahannya kalimat bukti yang tertulis di pratinjau naskah; pembandingnya
@@ -88,7 +88,7 @@ export function BuktiAletaAbt({
   const berkas = bahan ? berkasUntukBukti(r.nm, bahan.dokumen) : null;
   const jumlahBeda = daftar.reduce((n, _, i) => n + Object.values(banding(i)).filter((h) => h.keadaan === "beda").length, 0);
   const selesai = daftar.filter((x) => x.diperiksa).length;
-  const kalimat = kalimatBaris(r, b.sisi, b.nomor - 1);
+  const kalimat = kalimatBaris(r, b.sisi, b.nomor - 1, b.kode);
   const ubah = (kolom: keyof BarisBukti, nilai: string | number) =>
     setDaftar((l) => l.map((x, i) => (i === iAktif ? { ...x, baris: { ...x.baris, [kolom]: nilai } } : x)));
 
@@ -151,14 +151,14 @@ export function BuktiAletaAbt({
             const beda = Object.values(banding(i)).filter((h) => h.keadaan === "beda").length;
             return (
               <button
-                key={`${x.sisi}.${x.nomor}`}
+                key={x.kode}
                 type="button"
                 aria-current={i === iAktif}
                 onClick={() => setAktif(i)}
                 className={`flex min-h-11 gap-2.5 rounded-lg border p-2.5 text-left ${i === iAktif ? "border-primary bg-primary/10" : "border-border bg-card"}`}
               >
-                <span className="w-8 flex-none text-sm font-bold text-primary">
-                  {x.sisi}.{x.nomor}
+                <span className="min-w-8 max-w-28 flex-none break-all text-sm font-bold text-primary">
+                  {x.kode}
                 </span>
                 <span className="min-w-0">
                   <span className="block text-sm font-semibold">{x.baris.nm || "Tanpa nama"}</span>
@@ -172,7 +172,7 @@ export function BuktiAletaAbt({
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <p className="text-lg font-bold">
               <span className="text-primary">
-                {b.sisi}.{b.nomor}
+                {b.kode}
               </span>{" "}
               {r.nm}
             </p>
@@ -325,7 +325,7 @@ function PertimbanganBukti({
   const verstekPakai = permohonan ? false : verstek;
   const jumlahPemohon = jumlahPilih ? Number(jumlahPilih) : jumlahPemohonSipp === 1 ? 1 : 2;
 
-  const masuk: BuktiMasuk[] = daftar.map((x) => ({ sisi: x.sisi, nomor: x.nomor, baris: x.baris }));
+  const masuk: BuktiMasuk[] = daftar.map((x) => ({ sisi: x.sisi, nomor: x.nomor, kode: x.kode, baris: x.baris }));
   const hasil = useMemo(
     () =>
       jenis

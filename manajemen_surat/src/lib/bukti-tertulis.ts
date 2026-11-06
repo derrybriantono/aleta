@@ -30,6 +30,24 @@ export type NikahSipp = { nomor: string; tglKutipan: string; kua: string; tglNik
 export type DataSipp = { P: PihakSipp[]; T: PihakSipp[]; nikah: NikahSipp | null };
 export type HasilBanding = { keadaan: "sama" | "beda"; sipp: string; pakai: string | null };
 
+/**
+ * Kode tanda bukti di naskah: P.n dan T.n, kode naskah rekonvensi PK.n, TK.n, PR.n, TR.n, dan pasangan satu bukti berkode ganda ("PK.2/TR.2").
+ * Kode ditulis apa adanya; sisi (P atau T) hanya dipakai untuk memilih bunyi: PK dan TR milik penggugat/pemohon, TK dan PR milik tergugat/termohon
+ * (pengaju rekonvensi adalah tergugat/termohon konvensi, jadi PR berpihak ke T dan TR, lawannya, ke P).
+ */
+const KODE_SATU = String.raw`(?:PK|TK|PR|TR|P|T)\.\s?\d+`;
+export const POLA_KODE_TANDA = String.raw`${KODE_SATU}(?:\s?/\s?${KODE_SATU})?`;
+export const SISI_KODE_NASKAH: Readonly<Record<string, "P" | "T">> = { P: "P", PK: "P", TR: "P", T: "T", TK: "T", PR: "T" };
+
+/** Kode dirapikan: tanpa spasi, huruf besar ("pk. 2 / tr.2" menjadi "PK.2/TR.2"). */
+export const rapikanKodeTanda = (kode: string): string => String(kode ?? "").replace(/\s+/g, "").toUpperCase();
+
+/** Sisi dan nomor dari kode pertama ("PK.2/TR.2" -> P, 2). */
+export function bacaKodeTanda(kode: string): { sisi: "P" | "T"; nomor: number } | null {
+  const m = /^(PK|TK|PR|TR|P|T)\.(\d+)/.exec(rapikanKodeTanda(kode));
+  return m ? { sisi: SISI_KODE_NASKAH[m[1]], nomor: Number(m[2]) } : null;
+}
+
 export const KATALOG_BUKTI: readonly JenisKatalog[] = Object.freeze(
   katalog.surat.map((x) => ({
     kunci: x.k,
@@ -192,9 +210,9 @@ function keIso(teks: string): string {
   return "";
 }
 
-/** Kalimat satu bukti. Bagian kosong tidak ditulis. */
-export function kalimatBaris(r: BarisBukti, sisi: "P" | "T", i: number): string {
-  const kode = `${sisi}.${i + 1}`;
+/** Kalimat satu bukti. Bagian kosong tidak ditulis. `kodeAsli` (mis. "PK.2/TR.2") dipakai apa adanya bila diberikan; kosong: "P.n" atau "T.n". */
+export function kalimatBaris(r: BarisBukti, sisi: "P" | "T", i: number, kodeAsli?: string): string {
+  const kode = kodeAsli ? rapikanKodeTanda(kodeAsli) : `${sisi}.${i + 1}`;
   if (typeof r.manual === "string" && r.manual.trim()) return r.manual.trim();
   const nm = String(r.nm ?? "").trim();
   const an = String(r.an ?? "").trim();
@@ -217,7 +235,7 @@ export function kalimatBaris(r: BarisBukti, sisi: "P" | "T", i: number): string 
 export function uraiKalimatBukti(teks: string): BarisBukti {
   let s = String(teks ?? "").replace(/\s+/g, " ").trim().replace(/^\d+[.)]\s*/, "").replace(/;$/, "");
   const r: BarisBukti = { nm: "", an: "", no: "", tgl: "", oleh: "", meterai: 0, cocok: 0, manual: null };
-  if (!/bukti surat tersebut|,\s*lalu diberi tanda\s+[PT]\.\s?\d+\s+serta diberi tanggal/i.test(s)) {
+  if (!new RegExp(String.raw`bukti surat tersebut|,\s*lalu diberi tanda\s+${POLA_KODE_TANDA}\s+serta diberi tanggal`, "i").test(s)) {
     r.nm = (/^[^,.;]+/.exec(s) || [s])[0].trim();
     r.manual = String(teks ?? "").replace(/\s+/g, " ").trim();
     return r;
@@ -254,19 +272,26 @@ export function uraiKalimatBukti(teks: string): BarisBukti {
   return r;
 }
 
-/** Bukti surat yang tertulis di naskah: alinea yang memuat "diberi tanda P.n" atau "T.n", tanpa bukti elektronik. Urut seperti di naskah. */
-export function buktiDariAlinea(alinea: ReadonlyArray<{ teks: string }>): Array<{ sisi: "P" | "T"; nomor: number; baris: BarisBukti }> {
-  const hasil: Array<{ sisi: "P" | "T"; nomor: number; baris: BarisBukti }> = [];
+export type BuktiNaskah = { sisi: "P" | "T"; nomor: number; /** Kode seperti tertulis di naskah: "P.1", "PK.2", "TR.3", atau "PK.2/TR.2". */ kode: string; baris: BarisBukti };
+
+/**
+ * Bukti surat yang tertulis di naskah: alinea yang memuat "diberi tanda" diikuti kode (P.n, T.n, PK.n, TK.n, PR.n, TR.n, atau pasangan "PK.2/TR.2"),
+ * tanpa bukti elektronik. Urut seperti di naskah. Kode dibawa apa adanya; sisi menurut SISI_KODE_NASKAH.
+ */
+export function buktiDariAlinea(alinea: ReadonlyArray<{ teks: string }>): BuktiNaskah[] {
+  const hasil: BuktiNaskah[] = [];
   const sudah = new Set<string>();
+  const pola = new RegExp(String.raw`diberi tanda\s+(${POLA_KODE_TANDA})\s+serta diberi tanggal`, "i");
   for (const a of alinea) {
     const t = String(a.teks ?? "");
     if (/bukti elektronik tersebut/i.test(t)) continue;
-    const m = /diberi tanda\s+([PT])\.\s?(\d+)\s+serta diberi tanggal/i.exec(t);
+    const m = pola.exec(t);
     if (!m) continue;
-    const kunci = `${m[1].toUpperCase()}.${m[2]}`;
-    if (sudah.has(kunci)) continue;
-    sudah.add(kunci);
-    hasil.push({ sisi: m[1].toUpperCase() as "P" | "T", nomor: Number(m[2]), baris: uraiKalimatBukti(t) });
+    const kode = rapikanKodeTanda(m[1]);
+    const b = bacaKodeTanda(kode);
+    if (!b || sudah.has(kode)) continue;
+    sudah.add(kode);
+    hasil.push({ sisi: b.sisi, nomor: b.nomor, kode, baris: uraiKalimatBukti(t) });
   }
   return hasil;
 }

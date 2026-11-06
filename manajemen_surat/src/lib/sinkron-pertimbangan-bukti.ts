@@ -70,7 +70,14 @@ const dataUsulan = kartuUsulanJson as unknown as { kartu: KartuUsulan[]; bunyiTa
 export const KARTU_USULAN: readonly KartuUsulan[] = dataUsulan.kartu;
 export const BUNYI_TANPA_ASLI: Readonly<Partial<Record<KeadaanKartu, string>>> = dataUsulan.bunyiTanpaAsli;
 
-export type BuktiMasuk = { sisi: "P" | "T"; nomor: number; baris: BarisBukti; agendaKe?: number };
+export type BuktiMasuk = {
+  sisi: "P" | "T";
+  nomor: number;
+  baris: BarisBukti;
+  agendaKe?: number;
+  /** Kode tanda seperti tertulis di naskah ("PK.2", "TR.3", "PK.2/TR.2"). Kosong: "P.n" atau "T.n" dari sisi dan nomor. Sisi hanya memilih bunyi. */
+  kode?: string;
+};
 /** Isian tambahan untuk itsbat nikah dan dispensasi kawin; semuanya boleh kosong (bagian kalimat yang membutuhkannya tidak ditulis). */
 export type IsianPermohonan = { alamat?: string; anak?: string; calon?: string; usiaAnak?: string; tglLahirAnak?: string };
 export type KonteksPerkara = {
@@ -131,7 +138,7 @@ export const LABEL_ISIAN: Readonly<Record<string, string>> = {
   oleh: "penerbit surat (kolom Dikeluarkan oleh)",
   fotokopi: "bukti yang berupa fotokopi",
 };
-const kodeDari = (b: BuktiMasuk) => `${b.sisi}.${b.nomor}`;
+const kodeDari = (b: BuktiMasuk) => (b.kode && b.kode.trim() ? b.kode.trim() : `${b.sisi}.${b.nomor}`);
 
 /** Jenis perkara dari teks jenis perkara SIPP. null bila belum punya bunyi (termasuk itsbat nikah kontensius). */
 export function jenisPerkaraBukti(jenisPerkara: unknown): JenisPerkaraBukti | null {
