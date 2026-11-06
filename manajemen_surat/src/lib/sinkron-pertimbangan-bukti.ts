@@ -209,6 +209,9 @@ export function jenisPerkaraBukti(jenisPerkara: unknown): JenisPerkaraBukti | nu
   if (/kewarisan|waris/i.test(t)) return "KW";
   return null;
 }
+/** Asal kartu untuk layar: nama blangko dan alineanya, tanpa nomor rumus dan akhiran berkas. Nilai `asal` utuh tetap untuk telusur. */
+export const asalUntukLayar = (asal: unknown): string =>
+  String(asal ?? "").replace(/^Rumus variabel \d+ \(cabang \w+\), dipanggil di /, "").replace(/\.rtf\b/gi, "");
 export const permohonanBukti = (j: JenisPerkaraBukti) => j === "IN" || j === "DK" || j === "PAW";
 /** Perkara yang kalimat "tidak dibantah"-nya ada di blangko (hanya cerai); kebendaan tidak punya. */
 export const adaKalimatBantahan = (j: JenisPerkaraBukti) => j === "CG" || j === "CT";

@@ -591,7 +591,8 @@ describe("layar Pertimbangan dari alat bukti, perkara kebendaan", () => {
     pilih("Dikabulkan");
     await waitFor(() => expect(screen.getAllByText(/yang membuktikan identitas dan tempat tinggal para pihak/).length).toBeGreaterThan(0));
     expect(screen.queryByText("Lawan membantah")).toBeNull();
-    expect(screen.getAllByText(/Rumus variabel 4807 \(cabang k1\)/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Rumus variabel|cabang k\d|\.rtf/)).toBeNull();
+    expect(screen.getAllByText(/Dari 4a Harta Bersama/).length).toBeGreaterThan(0);
   });
   it("cerai gugat tetap punya Lawan membantah saat dikabulkan", async () => {
     pasang("Cerai Gugat");

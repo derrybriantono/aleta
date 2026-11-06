@@ -34,6 +34,7 @@ import {
   type IsianPermohonan,
   type JenisPerkaraBukti,
   type ParagrafBukti,
+  asalUntukLayar,
 } from "@/lib/sinkron-pertimbangan-bukti";
 import type { RencanaSisip } from "@/lib/sisip-pertimbangan-bukti";
 
@@ -542,7 +543,7 @@ function PertimbanganBukti({
           {otomatis.map((p, i) => (
             <div key={`${p.kode}-${i}`} className="rounded-lg bg-muted/50 px-4 py-3 font-serif text-base leading-relaxed">
               {p.bunyi}
-              <span className="mt-1 block font-sans text-xs text-muted-foreground">Bukti {p.kode}. Dari {p.asal}</span>
+              <span className="mt-1 block font-sans text-xs text-muted-foreground">Bukti {p.kode}. Dari {asalUntukLayar(p.asal)}</span>
             </div>
           ))}
         </div>
@@ -569,7 +570,7 @@ function PertimbanganBukti({
                 />
                 <span className="min-w-0 font-serif text-base leading-relaxed">
                   {p.bunyi}
-                  <span className="mt-1 block font-sans text-xs text-muted-foreground">Bukti {p.kode}. Dari {p.asal}</span>
+                  <span className="mt-1 block font-sans text-xs text-muted-foreground">Bukti {p.kode}. Dari {asalUntukLayar(p.asal)}</span>
                 </span>
               </label>
             );
