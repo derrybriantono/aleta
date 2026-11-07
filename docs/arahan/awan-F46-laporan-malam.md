@@ -10,7 +10,7 @@ Cabang `fitur-46-cerai`. Kode terakhir yang diuji: commit `725bcc16`. Belum diri
 - Agenda pembuktian dibaca dari jadwal SIPP.
 - Kode PK, TK, PR, dan TR terbaca di layar dan di penyisip.
 - Bukti elektronik dibaca dari naskah dan mendapat paragraf menurut keadaan pemeriksaan. Bukti elektronik tidak ikut golongan surat.
-- Format alinea "- Bahwa": tanda hubung, tab, lalu baris berikutnya rata dengan teks, sama seperti "- Bahwa bukti" di blangko. Alinea sesudahnya tetap seperti semula.
+- Format alinea "- Bahwa": tanda hubung, tab, lalu baris berikutnya rata dengan teks, sama seperti "- Bahwa bukti" di blangko. Alinea sesudahnya tetap seperti semula. Bentuk ini dipilih pemilik pada 7 November sesudah membandingkan dua render Word.
 - Kalimat bukti yang diketik sendiri ikut terbaca. Kalimat itu tampil apa adanya, masuk daftar belum ada bunyi, dan tidak diberi paragraf karangan.
 - Layar menyebut asal blangko tanpa nomor rumus.
 - Bagian di layar cetak ALETA ABT: paragraf otomatis, usulan bercentang, toggle Lawan membantah, Salin, dan centang masuk naskah.
@@ -46,7 +46,6 @@ Server, SIPP, dan ABT sungguhan. Layar hanya dilihat dengan data fiktif pada hal
 
 ## Perlu diperiksa pemilik
 
-- Format "- Bahwa". Bila yang dimaksud tanda hubung tepat di posisi tab Menimbang, ubah ke `\fi720\li0`.
 - 48 kartu usulan. Bunyi hukumnya tulisan AI.
 - Bunyi blangko yang mencurigakan: `awan-F46-cerai-hasil.md`, `awan-F46-itsbat-dk-hasil.md`, dan `awan-F46-kebendaan-hasil.md`. Pada kebendaan: "volledig bidende bewijskracht", penulisan perubahan UU ITE yang berbeda antar-blangko, kalimat Tergugat yang selalu menyebut saksi, kalimat lain-lain, dan penggolongan kata kunci yang longgar seperti "Surat Keterangan Rumah Sakit" masuk golongan tanah.
 - Rujukan yang belum terverifikasi: Pasal 284 dan 285 RBg hanya bersumber dari kartu blangko, sedangkan rak peraturan masih mencatat belum.
