@@ -42,6 +42,7 @@ export const SEBAB_SISIP = {
   bunyiKosong: "bunyi paragraf kosong",
   kataTerlarang: "bunyi memuat kata yang tidak boleh ada di naskah",
   kodeTakTerbaca: "kode bukti tidak terbaca",
+  kodeTakTercatat: "kode bukti tidak tercatat di daftar bukti naskah, letak sisipan tidak dapat dipastikan",
 } as const;
 
 const JUDUL = /^\s*(?:TENTANG\s+)?PERTIMBANGAN\s+HUKUM\s*\.?\s*$/i;
@@ -62,6 +63,10 @@ const RENTANG = new RegExp(
   String.raw`(?<![A-Za-z0-9\-/.])(${SISI_KODE})\.(\d+)(?:/(PK|TK|PR|TR)\.(\d+))?\s*(?:sampai(?:\s+dengan)?|s/d|s\.d\.?|hingga|[-–—])\s*(?:(${SISI_KODE})\.)?(\d+)(?:/(PK|TK|PR|TR)\.(\d+))?(?!\d)`,
   "gi"
 );
+/** Alinea yang menilai bukti surat tanpa menyebut kode (blangko: "bukti-bukti surat ... fotokopi", "terhadap akta otentik ..."). */
+const NILAI_SURAT = /bukti[- ]bukti\s+surat|bukti\s+surat|alat\s+bukti\s+(?:surat|tertulis)|bukti\s+tertulis|akta\s+(?:otentik|autentik|di\s+bawah\s+tangan)|fotokopi|bermeterai|dinazegelen|meterai/i;
+const AWAL_TERHADAP_SURAT = /^\s*[-–—•*]?\s*(?:Menimbang,?\s+)?(?:bahwa\s+)?terhadap\s+(?:akta|surat|fotokopi)\b/i;
+const SAKSI = /saksi/i;
 const KODE_CALON = new RegExp(String.raw`(?<![A-Za-z0-9])(${SISI_KODE})\.(\d+)(?!\d)`, "g");
 
 /** Bentuk baku sisi: PK menjadi P, TK menjadi T, lainnya apa adanya. */
@@ -107,14 +112,33 @@ export type BagianNaskah = {
   batasFakta: number;
   /** Alinea penilaian bukti terakhir sebelum batasFakta; -1 bila tidak ada. */
   jangkar: number;
+  /**
+   * Cadangan bila jangkar -1: alinea penilaian bukti surat yang tidak menyebut kode, dan hanya dipakai bila yang menyusul sampai batasFakta
+   * tinggal alinea saksi atau judul pendek. -1 bila tidak ada. Hanya boleh dipakai untuk kode yang tercatat di `dikenal`.
+   */
+  jangkarUmum: number;
   /** Kode yang disebut di seluruh bagian pertimbangan. */
   disebut: Set<string>;
+  /** Kode yang tercatat di naskah sebelum judul pertimbangan (daftar bukti di duduk perkara). */
+  dikenal: Set<string>;
 };
+
+/** Alinea penilaian bukti surat tanpa kode yang langsung disusul (sampai batasFakta) hanya oleh alinea saksi atau judul pendek; -1 bila tidak ada. */
+function cariJangkarUmum(teks: readonly string[], judul: number, batasFakta: number): number {
+  for (let i = batasFakta - 1; i > judul; i -= 1) {
+    const t = teks[i];
+    const penilaian = (PENILAIAN.test(t) || AWAL_TERHADAP_SURAT.test(t)) && NILAI_SURAT.test(t) && !SAKSI.test(t) && t.trim().length > 60;
+    if (penilaian) return i;
+    if (SAKSI.test(t) || t.trim().length <= 60) continue;
+    return -1;
+  }
+  return -1;
+}
 
 /** Membaca letak bagian pembuktian dari teks alinea naskah (tanpa RTF). */
 export function bacaBagianNaskah(teks: readonly string[]): BagianNaskah {
   const judul = teks.findIndex((t) => JUDUL.test(t));
-  const kosong: BagianNaskah = { judul, akhir: teks.length, batasFakta: -1, jangkar: -1, disebut: new Set() };
+  const kosong: BagianNaskah = { judul, akhir: teks.length, batasFakta: -1, jangkar: -1, jangkarUmum: -1, disebut: new Set(), dikenal: new Set() };
   if (judul < 0) return kosong;
   let akhir = teks.length;
   for (let i = judul + 1; i < teks.length; i += 1) {
@@ -141,7 +165,10 @@ export function bacaBagianNaskah(teks: readonly string[]): BagianNaskah {
       }
     }
   }
-  return { judul, akhir, batasFakta, jangkar, disebut };
+  const dikenal = new Set<string>();
+  for (let i = 0; i < judul; i += 1) for (const k of kodeDisebut(teks[i])) dikenal.add(k);
+  const jangkarUmum = jangkar < 0 && batasFakta >= 0 ? cariJangkarUmum(teks, judul, batasFakta) : -1;
+  return { judul, akhir, batasFakta, jangkar, jangkarUmum, disebut, dikenal };
 }
 
 type Calon = { kode: string; bunyi: string; daftarKode: string[] };
@@ -195,8 +222,21 @@ function pilah(bagian: BagianNaskah, calon: Calon[]) {
 function sebabBagian(b: BagianNaskah): string | null {
   if (b.judul < 0) return SEBAB_SISIP.tanpaJudul;
   if (b.batasFakta < 0) return SEBAB_SISIP.tanpaBatas;
-  if (b.jangkar < 0) return SEBAB_SISIP.tanpaJangkar;
+  if (b.jangkar < 0 && b.jangkarUmum < 0) return SEBAB_SISIP.tanpaJangkar;
   return null;
+}
+
+/** Alinea tempat sisipan: penilaian bukti berkode terakhir, atau cadangannya (penilaian bukti surat tanpa kode). */
+const jangkarPakai = (b: BagianNaskah): number => (b.jangkar >= 0 ? b.jangkar : b.jangkarUmum);
+
+/**
+ * Pada jangkar cadangan letak sisipan hanya berdasar bunyi umum alinea, jadi hanya kode yang memang tercatat di daftar bukti naskah
+ * (sebelum judul pertimbangan) yang boleh masuk; kode lain ditolak dengan sebabnya.
+ */
+function pisahTercatat(bagian: BagianNaskah, baru: Calon[]): { layak: Calon[]; tolak: TidakDisisip[] } {
+  if (bagian.jangkar >= 0) return { layak: baru, tolak: [] };
+  const layak = baru.filter((c) => c.daftarKode.every((k) => bagian.dikenal.has(k)));
+  return { layak, tolak: baru.filter((c) => !layak.includes(c)).map((c) => ({ kode: c.kode, sebab: SEBAB_SISIP.kodeTakTercatat })) };
 }
 
 /** Perkiraan dari teks alinea saja (mis. pratinjau di layar): mana yang akan masuk, sudah ada, atau tidak dapat disisip. Hasil pastinya saat naskah disisipi. */
@@ -207,7 +247,8 @@ export function rencanakanSisipan(teksAlinea: readonly string[], paragraf: Reado
   const { sudahAda, baru } = pilah(bagian, calon);
   const sebab = sebabBagian(bagian);
   if (sebab) return { akanMasuk: [], sudahAda, tidakDisisip: [...tidak, ...baru.map((c) => ({ kode: c.kode, sebab }))] };
-  return { akanMasuk: baru.map((c) => c.kode), sudahAda, tidakDisisip: tidak };
+  const { layak, tolak } = pisahTercatat(bagian, baru);
+  return { akanMasuk: layak.map((c) => c.kode), sudahAda, tidakDisisip: [...tidak, ...tolak] };
 }
 
 /** Teks ketikan menjadi teks RTF: ASCII apa adanya; latin1 lewat \'xx, selebihnya lewat \uN? (sama dengan perbaikiRtf). */
@@ -299,9 +340,9 @@ function formatSejenis(baca: string, ps: ReadonlyArray<{ teks: string; src?: Arr
   if (jenis === "bahwa") {
     const bukti: Array<{ nilai: string; indeks: number }> = [];
     for (const c of calon) if (PENILAIAN.test(ps[c.indeks].teks)) bukti.push(c);
-    if (bukti.length) return paling(bukti, bagian.jangkar);
+    if (bukti.length) return paling(bukti, jangkarPakai(bagian));
   }
-  return paling(calon, bagian.jangkar);
+  return paling(calon, jangkarPakai(bagian));
 }
 
 /** Dari perintah jangkar: alinea menggantung 384 twips ("- Bahwa"). Dipakai hanya bila naskah tidak punya alinea "- Bahwa" sendiri. */
@@ -340,14 +381,18 @@ export function sisipkanParagrafBukti(rtfLatin1: string, paragraf: ReadonlyArray
     const ps = bacaRtfParagraf(baca, true);
     const bagian = bacaBagianNaskah(ps.map((p) => p.teks));
     if (bagian.judul < 0) return semuaTidak(SEBAB_SISIP.tanpaJudul);
-    const { sudahAda, baru } = pilah(bagian, calon);
+    const { sudahAda, baru: baruSemua } = pilah(bagian, calon);
     hasil.sudahAda = sudahAda;
-    if (!baru.length) return { ...hasil, sudahAda };
+    if (!baruSemua.length) return { ...hasil, sudahAda };
     const sebab = sebabBagian(bagian);
-    if (sebab) return semuaTidak(sebab, baru);
+    if (sebab) return semuaTidak(sebab, baruSemua);
+    const { layak: baru, tolak } = pisahTercatat(bagian, baruSemua);
+    tidak.push(...tolak);
+    if (!baru.length) return { rtf: asli, disisipkan: [], sudahAda, tidakDisisip: [...tidak] };
+    const jk = jangkarPakai(bagian);
 
     // Letak sisip: penutup (\par) alinea jangkar, bukan di dalam tabel.
-    const jangkar = ps[bagian.jangkar];
+    const jangkar = ps[jk];
     const src = jangkar.src;
     if (!src || !src.length || src.length !== jangkar.teks.length) return semuaTidak(SEBAB_SISIP.letakPenutup, baru);
     const awalTeks = src[0][0];
@@ -364,7 +409,7 @@ export function sisipkanParagrafBukti(rtfLatin1: string, paragraf: ReadonlyArray
     // "- Bahwa" tanpa alinea sejenis diturunkan dari jangkar. Tak ada sumber: mewarisi.
     // Warna jangkar: bila merah (teks blangko yang belum diperiksa), sisipan ditulis hitam (\cf0).
     const cfJangkar = src[src.length - 1][2];
-    const jenisJangkar = jenisAlinea(ps[bagian.jangkar].teks);
+    const jenisJangkar = jenisAlinea(ps[jk].teks);
     const perintahJangkar = perintahParagraf(baca, jangkar);
     const sumberFormat = new Map<JenisAlinea, string | null>();
     const formatUntuk = (jenis: JenisAlinea): string | null => {
@@ -405,11 +450,11 @@ export function sisipkanParagrafBukti(rtfLatin1: string, paragraf: ReadonlyArray
       const k = baru.length;
       if (ps2.length !== ps.length + k) return null;
       for (let i = 0; i < ps2.length; i += 1) {
-        if (i <= bagian.jangkar) {
+        if (i <= jk) {
           if (ps2[i].teks !== ps[i].teks) return null;
-        } else if (i <= bagian.jangkar + k) {
+        } else if (i <= jk + k) {
           const p = ps2[i];
-          if (p.teks !== baru[i - bagian.jangkar - 1].bunyi || p.merah.length) return null;
+          if (p.teks !== baru[i - jk - 1].bunyi || p.merah.length) return null;
           if (!p.src || p.src.some((s) => s[2] !== cfDiharapkan)) return null;
         } else if (ps2[i].teks !== ps[i - k].teks) return null;
       }
