@@ -288,17 +288,24 @@ const PILIHAN_AGENDA = [
 ];
 
 /** Keadaan putusan yang tertulis di naskah, sebagai tebakan awal yang bisa diubah. */
-function bacaDariNaskah(alinea: ReadonlyArray<{ teks: string }>): { status: string; verstek: boolean } {
+export function bacaDariNaskah(alinea: ReadonlyArray<{ teks: string }>): { status: string; verstek: boolean } {
   const t = alinea.map((a) => a.teks).join("\n");
-  const status = /tidak dapat diterima/i.test(t)
+  // Keadaan putusan dibaca dari AMAR (sesudah kata "MENGADILI" terakhir), bukan dari seluruh naskah: kata "menolak" juga ada di
+  // kaidah fikih yang dikutip majelis ("Menolak kemudaratan ... lebih diutamakan") dan "mengabulkan" ada di petitum gugatan, sehingga
+  // putusan Dikabulkan terbaca Ditolak (ditemukan 7 Nov 2026 pada perkara cerai gugat nyata). Tanpa kata MENGADILI, seluruh naskah dibaca.
+  const mengadili = [...t.matchAll(/\bMENGADILI\b/g)];
+  const amar = mengadili.length ? t.slice(mengadili[mengadili.length - 1].index) : t;
+  const kabul = /\bmengabulkan\b/i.test(amar);
+  const tolak = /\bmenolak\s+(?:gugatan|permohonan)\b/i.test(amar);
+  const status = /tidak dapat diterima/i.test(amar)
     ? "Tidak Dapat Diterima"
-    : /mencabut|dicabut/i.test(t)
+    : /mencabut|dicabut/i.test(amar)
       ? "Dicabut"
-      : /mengabulkan[^.]{0,80}sebagian/i.test(t)
+      : kabul && (tolak || /mengabulkan[^.]{0,80}sebagian/i.test(amar))
         ? "Dikabulkan sebagian"
-        : /menolak/i.test(t)
+        : tolak
           ? "Ditolak"
-          : /mengabulkan/i.test(t)
+          : kabul
             ? "Dikabulkan"
             : "";
   return { status, verstek: /verstek|tidak pernah hadir/i.test(t) };
@@ -310,7 +317,8 @@ function keteranganSisipan(masukkan: boolean, rencana: RencanaSisip | null): str
   if (!rencana) return "Memeriksa letak sisipan di naskah...";
   const bagian: string[] = [];
   bagian.push(rencana.akanMasuk.length ? `Akan masuk: ${rencana.akanMasuk.join(", ")}.` : "Tidak ada paragraf yang akan ditambahkan.");
-  if (rencana.sudahAda.length) bagian.push(`Sudah ada di naskah, tidak ditambah: ${rencana.sudahAda.join(", ")}.`);
+  // Satu label dapat muncul untuk beberapa paragraf (mis. "P.1, P.2" untuk meterai, pencocokan, dan akta); ditulis sekali saja.
+  if (rencana.sudahAda.length) bagian.push(`Sudah ada di naskah, tidak ditambah: ${[...new Set(rencana.sudahAda)].join(", ")}.`);
   const sebabSama = [...new Set(rencana.tidakDisisip.map((t) => t.sebab))];
   if (sebabSama.length)
     bagian.push(`Belum dapat disisip: ${sebabSama.map((sebab) => `${rencana.tidakDisisip.filter((t) => t.sebab === sebab).map((t) => t.kode || "tanpa kode").join(", ")} (${sebab})`).join("; ")}.`);
