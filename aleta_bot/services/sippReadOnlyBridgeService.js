@@ -2933,7 +2933,7 @@ async function isiBlangkoPustaka(params = {}) {
   const b64 = typeof params.rtfBase64 === "string" ? params.rtfBase64 : "";
   if (!b64 || b64.length > Math.ceil((BATAS_BLANGKO_BYTE * 4) / 3) + 8) return { ok: false, sebab: "Isi blangko kosong atau terlalu besar." };
   const rtf = Buffer.from(b64, "base64").toString("latin1");
-  if (!/^\s*\{\rtf\d/.test(rtf.slice(0, 200))) return { ok: false, sebab: "Blangko ini bukan RTF." };
+  if (!/^\s*\{\\rtf\d/.test(rtf.slice(0, 200))) return { ok: false, sebab: "Blangko ini bukan RTF." };
   const mulai = Date.now();
   try {
     const mesin = mesinVariabelJalurAleta(jalur);

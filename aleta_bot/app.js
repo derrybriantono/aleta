@@ -197,6 +197,9 @@ app.use("/internal/aleta-bot/kamus-deteksi/lapis", express.json({ limit: "8mb" }
 /* === AKHIR KAMUS-DB === */
 // Paket logo kop (17 Okt 2026): badan memuat logo satker (base64, <= 3 MB).
 app.use("/internal/aleta-bot/abt-pengaturan/logo/paket", express.json({ limit: "6mb" }));
+// Naskah ALETA ABT (blangko.isiPustaka lewat jembatan SIPP): badan memuat pustaka rumus (2.020 variabel = ±2,5 MB) dan RTF blangko
+// base64 (sampai ±6 MB bila bergambar). Dengan batas 1 MB di bawah, pratinjau naskah di layar cetak selalu gagal 413 pada pustaka nyata.
+app.use("/internal/aleta-bot/jlf/sipp/query", express.json({ limit: "16mb" }));
 app.use(express.json({ limit: "1mb" }));
 // MODE KEMBARAN: satu permintaan = satu kelompok antrean sinkron. Dipasang SESUDAH pembaca
 // badan supaya konteks bertahan sampai penangan rute. Di mode biasa tidak berbuat apa-apa.

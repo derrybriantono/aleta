@@ -51,7 +51,10 @@ export const dynamic = "force-dynamic";
  */
 
 const BATAS_BASE64 = 28 * 1024 * 1024;
-const POLA_ID = /^[\w.:@-]{1,80}$/;
+// Id blangko di pustaka = jalur relatif berkas di ABT ("1 Perceraian CG/[01] [Kabul Verstek] Cerai (Format Lengkap).rtf", sampai 181 huruf),
+// jadi spasi, kurung, dan garis miring sah. Id hanya dipakai sebagai kunci kueri berparameter; yang ditolak: karakter kendali,
+// garis miring terbalik, dan segmen "..".
+const POLA_ID = /^(?!.*(?:^|\/)\.\.(?:\/|$))[^\u0000-\u001f\\]{1,300}$/;
 
 type Db = Awaited<ReturnType<typeof getDatabase>>;
 
