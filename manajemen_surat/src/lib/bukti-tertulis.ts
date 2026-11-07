@@ -243,23 +243,27 @@ export function uraiKalimatBukti(teks: string): BarisBukti {
   r.meterai = !/meterai/i.test(s) ? 3 : /tidak bermeterai/i.test(s) ? 2 : /tidak di-?nazegelen/i.test(s) ? 1 : 0;
   r.cocok = /kopian sebelumnya/i.test(s) ? 3 : /tidak dapat dicocokkan/i.test(s) ? 1 : /dari fotokopinya/i.test(s) ? 2 : /dicocokkan/i.test(s) ? 0 : 4;
   s = s.replace(/,?\s*bukti surat tersebut[\s\S]*$/i, "").replace(/,?\s*lalu diberi tanda[\s\S]*$/i, "");
+  // Titik-titik ("...", "…") adalah isian yang belum diisi di ABT, bukan nilai: bagian itu dibaca kosong, tetapi tetap dibuang dari nama.
+  const TITIK = /^[\s._…-]*$/;
   const oleh = /,?\s*yang (?:dikeluarkan|diterbitkan) oleh\s+(.+?)$/i.exec(s);
   if (oleh) {
-    r.oleh = oleh[1].trim();
+    r.oleh = TITIK.test(oleh[1]) ? "" : oleh[1].trim();
     s = s.slice(0, oleh.index);
   }
   s = s.replace(/[,\s]+$/, "");
-  const tgl = /,?\s*\b(?:ter)?tanggal\s+([0-9]{1,2}[-/ ][A-Za-z0-9]+[-/ ][0-9]{4}|[0-9]{4}-[0-9]{2}-[0-9]{2})\s*$/i.exec(s);
+  const tgl = /,?\s*\b(?:ter)?tanggal\s+([0-9]{1,2}[-/ ][A-Za-z0-9]+[-/ ][0-9]{4}|[0-9]{4}-[0-9]{2}-[0-9]{2}|\.{2,}|…+|_{2,})\s*$/i.exec(s);
   if (tgl) {
     const tt = tgl[1].replace(/\s+/g, " ").trim();
-    r.tgl = keIso(tt);
-    if (!r.tgl) r.tglTeks = tt;
+    if (!TITIK.test(tt)) {
+      r.tgl = keIso(tt);
+      if (!r.tgl) r.tglTeks = tt;
+    }
     s = s.slice(0, tgl.index);
   }
   s = s.replace(/[,\s]+$/, "");
   const no = /,?\s*\bNIK\.?\s*:?\s*([0-9][0-9 .]*[0-9])\s*$/i.exec(s) || /,?\s*\bNomor\s*:?\s+(.+?)\s*$/i.exec(s);
   if (no && !/^Nomor\s*$/i.test(s)) {
-    r.no = no[1].trim();
+    r.no = TITIK.test(no[1]) ? "" : no[1].trim();
     s = s.slice(0, no.index);
   }
   s = s.replace(/[,\s]+$/, "");
