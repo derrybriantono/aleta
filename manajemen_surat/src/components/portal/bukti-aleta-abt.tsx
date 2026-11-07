@@ -16,6 +16,7 @@ import {
   butirElektronikDariAlinea,
   kalimatBaris,
   katalogDari,
+  kodeGandaDiNaskah,
   kolomBukti,
   PIL_COCOK,
   PIL_METERAI,
@@ -69,6 +70,8 @@ export function BuktiAletaAbt({
   const [tersalin, setTersalin] = useState(false);
   // Bukti elektronik dibaca dari naskah (kalimat "bukti elektronik tersebut"); hanya tampil dan menjadi bahan pertimbangan, tidak disunting di sini.
   const elektronik = useMemo(() => butirElektronikDariAlinea(alinea), [alinea]);
+  // Kode yang tertulis dua kali di naskah dengan kalimat berbeda (dua kotak bukti di ABT sama-sama terisi): hanya yang pertama dibaca, jadi pemilik diberi tahu.
+  const ganda = useMemo(() => kodeGandaDiNaskah(alinea), [alinea]);
 
   // Pratinjau baru: daftar dibaca ulang dari naskah.
   if (sumber !== alinea) {
@@ -153,6 +156,11 @@ export function BuktiAletaAbt({
         <CardDescription>
           Dibaca dari naskah di atas dan diadu dengan SIPP. Perubahan di sini tidak tersimpan ke ABT: salin kalimatnya, atau simpan lewat kotak alat bukti di Blangko ABT by Derry Briantono.
         </CardDescription>
+        {ganda.length ? (
+          <p role="alert" className="rounded-md bg-amber-100 px-2 py-1.5 text-xs font-semibold text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+            Kode {ganda.map((x) => x.kode).join(", ")} tertulis lebih dari sekali di naskah dengan kalimat yang berbeda. Layar ini membaca yang pertama saja. Periksa kotak alat bukti di Blangko ABT by Derry Briantono, mungkin dua kotak sama-sama terisi.
+          </p>
+        ) : null}
         <div className="flex flex-wrap gap-2 pt-1">
           <Badge variant="success">
             {selesai} dari {daftar.length} sudah diperiksa

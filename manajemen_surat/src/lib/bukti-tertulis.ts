@@ -294,28 +294,66 @@ export type BuktiNaskah = { sisi: "P" | "T"; nomor: number; /** Kode seperti ter
 const uraianSuratLepas = (t: string): boolean =>
   !/^\s*(?:\d+[.)]\s*)?(?:-\s*)?(?:Menimbang|Bahwa)\b/i.test(t) && /foto\s?-?(?:kopi|copy)|kopi|salinan|\bscan\b|\basli\b|meterai/i.test(t);
 
-/**
- * Bukti surat yang tertulis di naskah: alinea yang memuat "diberi tanda" diikuti kode (P.n, T.n, PK.n, TK.n, PR.n, TR.n, atau pasangan "PK.2/TR.2"),
- * tanpa bukti elektronik. Urut seperti di naskah. Kode dibawa apa adanya; sisi menurut SISI_KODE_NASKAH.
- */
-export function buktiDariAlinea(alinea: ReadonlyArray<{ teks: string }>): BuktiNaskah[] {
-  const hasil: BuktiNaskah[] = [];
-  const sudah = new Set<string>();
-  const pola = new RegExp(String.raw`diberi tanda\s+(${POLA_KODE_TANDA})\s+serta diberi tanggal`, "i");
-  // Naskah yang diketik sendiri punya bentuk lain: "lalu diberi tanda P.1;", "dengan tanda P.1", "diberi kode bukti (P.1)". Kalimatnya tampil apa adanya.
-  const polaLain = new RegExp(String.raw`(?:diberi tanda|dengan tanda(?:\s+tanda)?|diberi kode bukti)\s*\(?\s*(${POLA_KODE_TANDA})(?!\d)`, "i");
+const polaTandaSurat = () => new RegExp(String.raw`diberi tanda\s+(${POLA_KODE_TANDA})\s+serta diberi tanggal`, "i");
+// Naskah yang diketik sendiri punya bentuk lain: "lalu diberi tanda P.1;", "dengan tanda P.1", "diberi kode bukti (P.1)". Kalimatnya tampil apa adanya.
+const polaTandaLain = () => new RegExp(String.raw`(?:diberi tanda|dengan tanda(?:\s+tanda)?|diberi kode bukti)\s*\(?\s*(${POLA_KODE_TANDA})(?!\d)`, "i");
+
+/** Setiap kemunculan kalimat bukti surat di naskah menurut urutnya, termasuk yang kodenya berulang. */
+function semuaBuktiSurat(alinea: ReadonlyArray<{ teks: string }>): Array<{ kode: string; teks: string }> {
+  const hasil: Array<{ kode: string; teks: string }> = [];
+  const pola = polaTandaSurat();
+  const polaLain = polaTandaLain();
   for (const a of alinea) {
     const t = String(a.teks ?? "");
     if (/bukti elektronik tersebut/i.test(t)) continue;
     const m = pola.exec(t) ?? (uraianSuratLepas(t) ? polaLain.exec(t) : null);
     if (!m) continue;
     const kode = rapikanKodeTanda(m[1]);
+    if (!bacaKodeTanda(kode)) continue;
+    hasil.push({ kode, teks: t });
+  }
+  return hasil;
+}
+
+/**
+ * Bukti surat yang tertulis di naskah: alinea yang memuat "diberi tanda" diikuti kode (P.n, T.n, PK.n, TK.n, PR.n, TR.n, atau pasangan "PK.2/TR.2"),
+ * tanpa bukti elektronik. Urut seperti di naskah. Kode dibawa apa adanya; sisi menurut SISI_KODE_NASKAH. Kode yang tertulis berulang dibaca dari
+ * kemunculan pertama; yang kalimatnya berbeda dilaporkan oleh kodeGandaDiNaskah.
+ */
+export function buktiDariAlinea(alinea: ReadonlyArray<{ teks: string }>): BuktiNaskah[] {
+  const hasil: BuktiNaskah[] = [];
+  const sudah = new Set<string>();
+  for (const { kode, teks } of semuaBuktiSurat(alinea)) {
     const b = bacaKodeTanda(kode);
     if (!b || sudah.has(kode)) continue;
     sudah.add(kode);
-    hasil.push({ sisi: b.sisi, nomor: b.nomor, kode, baris: uraiKalimatBukti(t) });
+    hasil.push({ sisi: b.sisi, nomor: b.nomor, kode, baris: uraiKalimatBukti(teks) });
   }
   return hasil;
+}
+
+export type KodeGanda = { kode: string; jumlah: number; elektronik: boolean };
+const kalimatSama = (x: string) => x.replace(/\s+/g, " ").trim().toLowerCase();
+
+/**
+ * Kode bukti yang tertulis lebih dari sekali di naskah dengan kalimat yang berbeda (biasanya dua kotak bukti di Blangko ABT sama-sama terisi).
+ * buktiDariAlinea dan butirElektronikDariAlinea hanya membaca kemunculan pertama, jadi yang lain dilaporkan di sini supaya tidak hilang diam-diam.
+ * Salinan yang kalimatnya sama persis tidak dilaporkan. Urut menurut kemunculan pertama.
+ */
+export function kodeGandaDiNaskah(alinea: ReadonlyArray<{ teks: string }>): KodeGanda[] {
+  const kelompok = new Map<string, { kalimat: Set<string>; jumlah: number; elektronik: boolean }>();
+  const catat = (kode: string, teks: string, elektronik: boolean) => {
+    const kunci = `${elektronik ? "E" : "S"}|${kode}`;
+    const e = kelompok.get(kunci) ?? { kalimat: new Set<string>(), jumlah: 0, elektronik };
+    e.kalimat.add(kalimatSama(teks));
+    e.jumlah += 1;
+    kelompok.set(kunci, e);
+  };
+  for (const x of semuaBuktiSurat(alinea)) catat(x.kode, x.teks, false);
+  for (const x of semuaButirElektronik(alinea)) catat(x.kode, x.teks, true);
+  return [...kelompok.entries()]
+    .filter(([, e]) => e.jumlah > 1 && e.kalimat.size > 1)
+    .map(([kunci, e]) => ({ kode: kunci.slice(2), jumlah: e.jumlah, elektronik: e.elektronik }));
 }
 
 export type ButirElektronik = {
@@ -342,13 +380,9 @@ export function jenisElektronikDari(teks: unknown): JenisElektronik | null {
   return terbaik;
 }
 
-/**
- * Bukti elektronik yang tertulis di naskah: alinea yang memuat "bukti elektronik tersebut" dan "diberi tanda" diikuti kode (P.n, T.n, PK.n, TK.n, PR.n, TR.n).
- * Bunyi kalimat sama dengan kalimatBuktiEl di Blangko Derry. Urut seperti di naskah; kode berulang dihitung sekali.
- */
-export function butirElektronikDariAlinea(alinea: ReadonlyArray<{ teks: string }>): ButirElektronik[] {
-  const hasil: ButirElektronik[] = [];
-  const sudah = new Set<string>();
+/** Setiap kemunculan kalimat "bukti elektronik tersebut" berkode di naskah menurut urutnya, termasuk yang kodenya berulang. */
+function semuaButirElektronik(alinea: ReadonlyArray<{ teks: string }>): Array<{ kode: string; teks: string }> {
+  const hasil: Array<{ kode: string; teks: string }> = [];
   const pola = new RegExp(String.raw`diberi tanda\s+(${POLA_KODE_TANDA})`, "i");
   for (const a of alinea) {
     const t = String(a.teks ?? "").replace(/\s+/g, " ").trim();
@@ -356,6 +390,20 @@ export function butirElektronikDariAlinea(alinea: ReadonlyArray<{ teks: string }
     const m = pola.exec(t);
     if (!m) continue;
     const kode = rapikanKodeTanda(m[1]);
+    if (!bacaKodeTanda(kode)) continue;
+    hasil.push({ kode, teks: t });
+  }
+  return hasil;
+}
+
+/**
+ * Bukti elektronik yang tertulis di naskah: alinea yang memuat "bukti elektronik tersebut" dan "diberi tanda" diikuti kode (P.n, T.n, PK.n, TK.n, PR.n, TR.n).
+ * Bunyi kalimat sama dengan kalimatBuktiEl di Blangko Derry. Urut seperti di naskah; kode berulang dihitung sekali.
+ */
+export function butirElektronikDariAlinea(alinea: ReadonlyArray<{ teks: string }>): ButirElektronik[] {
+  const hasil: ButirElektronik[] = [];
+  const sudah = new Set<string>();
+  for (const { kode, teks: t } of semuaButirElektronik(alinea)) {
     const b = bacaKodeTanda(kode);
     if (!b || sudah.has(kode)) continue;
     sudah.add(kode);
