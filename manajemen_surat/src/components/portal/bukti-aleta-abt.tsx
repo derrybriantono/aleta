@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { TombolSalinTeks } from "@/components/portal/tombol-salin-teks";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,7 +68,6 @@ export function BuktiAletaAbt({
   const [daftar, setDaftar] = useState<Butir[]>(() => dariNaskah(alinea));
   const [aktif, setAktif] = useState(0);
   const [bahan, setBahan] = useState<Bahan | null>(null);
-  const [tersalin, setTersalin] = useState(false);
   // Bukti elektronik dibaca dari naskah (kalimat "bukti elektronik tersebut"); hanya tampil dan menjadi bahan pertimbangan, tidak disunting di sini.
   const elektronik = useMemo(() => butirElektronikDariAlinea(alinea), [alinea]);
   // Kode yang tertulis dua kali di naskah dengan kalimat berbeda (dua kotak bukti di ABT sama-sama terisi): hanya yang pertama dibaca, jadi pemilik diberi tahu.
@@ -247,18 +247,7 @@ export function BuktiAletaAbt({
           )}
           <div className="rounded-lg bg-muted/50 px-4 py-3 font-serif text-base leading-relaxed">{kalimat}</div>
           <div className="flex flex-wrap justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                void navigator.clipboard
-                  .writeText(kalimat)
-                  .then(() => setTersalin(true))
-                  .catch(() => setTersalin(false));
-              }}
-            >
-              {tersalin ? "Tersalin" : "Salin kalimat"}
-            </Button>
+            <TombolSalinTeks teks={kalimat} label="Salin kalimat" apa="kalimat bukti" />
             <Button type="button" onClick={() => setDaftar((l) => l.map((x, i) => (i === iAktif ? { ...x, diperiksa: !x.diperiksa } : x)))}>
               {b.diperiksa ? "Batalkan tanda selesai" : "Tandai sudah diperiksa"}
             </Button>
@@ -381,7 +370,6 @@ function PertimbanganBukti({
     if (!agendaDiubah) setAgenda(Math.min(Math.max(Math.trunc(agendaSipp), 0), 3));
   }
   const [dipilih, setDipilih] = useState<ReadonlySet<string>>(new Set());
-  const [tersalin, setTersalin] = useState(false);
   const [jumlahPilih, setJumlahPilih] = useState<"" | "1" | "2">("");
   const [anak, setAnak] = useState<"P" | "L">("P");
   const [isian, setIsian] = useState<IsianPermohonan>({});
@@ -629,19 +617,7 @@ function PertimbanganBukti({
         </label>
       ) : null}
       <div className="flex flex-wrap justify-end gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          disabled={!salinan}
-          onClick={() => {
-            void navigator.clipboard
-              .writeText(salinan)
-              .then(() => setTersalin(true))
-              .catch(() => setTersalin(false));
-          }}
-        >
-          {tersalin ? "Tersalin" : "Salin pertimbangan"}
-        </Button>
+        <TombolSalinTeks teks={salinan} label="Salin pertimbangan" apa="pertimbangan" disabled={!salinan} />
       </div>
     </CardContent>
   );
