@@ -135,11 +135,22 @@ const normal = (t: unknown) =>
     .replace(/[.,]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-/** "Rahmawati" dan "Rahmawati binti Ahmad" orang yang sama pada bukti; gelar sesudah koma diabaikan. */
+/**
+ * "Rahmawati" dan "Rahmawati binti Ahmad" orang yang sama pada bukti; gelar sesudah koma diabaikan. Penanda peran dalam kurung
+ * ("SITI CONTOH (Penggugat)", hasil isian #4048#) dan nama sebutan ("... alias ...") bukan bagian nama: tanpa ini 112 dari 1.054 perkara
+ * berbukti di salinan uji terbaca "berbeda dari SIPP" padahal orangnya sama (ditemukan 7 Nov 2026).
+ */
 const intiNama = (t: unknown) =>
   normal(String(t ?? "").split(",")[0])
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\s+alias\s+.*$/, "")
     .replace(/\s+(?:bin|binti)\s+.*$/, "")
     .trim();
+
+/** SIPP menyimpan nomor duplikat dengan awalan kata ("Duplikat B-100/..."), sedangkan kalimat bukti menulis kata itu pada nama surat dan hanya nomornya sesudah "Nomor". */
+const tanpaAwalanNomor = (n: string) => n.replace(/^\s*(?:duplikat|salinan|turunan)\s+/i, "").trim();
 
 const bandingTeks = (nilai: unknown, sipp: string, sama: boolean): HasilBanding | null =>
   !sipp || !String(nilai ?? "").trim() ? null : { keadaan: sama ? "sama" : "beda", sipp, pakai: sama ? null : sipp };
@@ -168,7 +179,8 @@ export function bandingBaris(r: BarisBukti, sisi: "P" | "T", urutanKtp: number, 
   }
   if ((j === "nikah" || j === "duplikat") && sipp.nikah) {
     const n = sipp.nikah;
-    pasang("no", bandingTeks(r.no, n.nomor, String(r.no ?? "").trim() === n.nomor));
+    const nomorBukti = String(r.no ?? "").trim();
+    pasang("no", bandingTeks(r.no, n.nomor, nomorBukti === n.nomor || (nomorBukti !== "" && nomorBukti === tanpaAwalanNomor(n.nomor))));
     // Tanggal duplikat memang lain dari tanggal kutipan pertama.
     if (j === "nikah") pasang("tgl", bandingTeks(r.tgl, n.tglKutipan, r.tgl === n.tglKutipan));
     pasang("oleh", bandingTeks(r.oleh, n.kua, normal(r.oleh) === normal(n.kua)));
