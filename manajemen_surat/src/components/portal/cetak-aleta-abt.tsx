@@ -245,7 +245,8 @@ export function CetakAletaAbt() {
       const { tinjauSisaBlangko } = await import("@/lib/dialog-sisa-blangko");
       const periksa = async (nama: string, rtfBase64: string) => {
         const bita = Uint8Array.from(atob(rtfBase64), (c) => c.charCodeAt(0));
-        return tinjauSisaBlangko(bita, { nama: `${nama}.rtf`, jenis: jenisNaskahDariNama(nama) || "putusan", aksi: "unduh", bisaPerbaiki: true });
+        // Nama dari server sudah berakhiran .rtf (nama berkas blangko); dialog tidak perlu menampilkannya ("...rtf.rtf" ditemukan 7 Nov 2026).
+        return tinjauSisaBlangko(bita, { nama: nama.replace(/\.rtf$/i, ""), jenis: jenisNaskahDariNama(nama) || "putusan", aksi: "unduh", bisaPerbaiki: true });
       };
       if (jenis === "rtf") {
         const h = await kirim<{ nama: string; rtfBase64: string }>(badan("rtf"));

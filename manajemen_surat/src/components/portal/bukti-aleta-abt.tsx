@@ -172,7 +172,7 @@ export function BuktiAletaAbt({
                 onClick={() => setAktif(i)}
                 className={`flex min-h-11 gap-2.5 rounded-lg border p-2.5 text-left ${i === iAktif ? "border-primary bg-primary/10" : "border-border bg-card"}`}
               >
-                <span className="min-w-8 max-w-28 flex-none break-all text-sm font-bold text-primary">
+                <span className="min-w-8 max-w-28 flex-none break-all text-sm font-bold text-emerald-700 dark:text-emerald-300">
                   {x.kode}
                 </span>
                 <span className="min-w-0">
@@ -187,7 +187,7 @@ export function BuktiAletaAbt({
               <p className="text-xs font-semibold text-muted-foreground">Bukti elektronik, dibaca dari naskah</p>
               {elektronik.map((x) => (
                 <div key={x.kode} className="flex gap-2.5 rounded-lg border border-border bg-card p-2.5">
-                  <span className="min-w-8 max-w-28 flex-none break-all text-sm font-bold text-primary">{x.kode}</span>
+                  <span className="min-w-8 max-w-28 flex-none break-all text-sm font-bold text-emerald-700 dark:text-emerald-300">{x.kode}</span>
                   <span className="min-w-0">
                     <span className="block text-sm font-semibold">{x.nama}</span>
                     <span className="block text-xs text-muted-foreground">{keteranganPeriksaEl(x.periksa)}</span>
@@ -200,7 +200,7 @@ export function BuktiAletaAbt({
         <div className="flex min-w-0 flex-[999_1_520px] flex-col gap-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <p className="text-lg font-bold">
-              <span className="text-primary">
+              <span className="text-emerald-700 dark:text-emerald-300">
                 {b.kode}
               </span>{" "}
               {r.nm}
