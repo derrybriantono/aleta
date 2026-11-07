@@ -3,6 +3,8 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { POLA_ID_BLANGKO } from "@/lib/id-blangko-abt";
+
 /**
  * Tiga cacat yang hanya muncul bila layar cetak ALETA ABT dicoba dengan PUSTAKA NYATA (sinkron dari ABT salinan, 7 Nov 2026), bukan data fiktif:
  *  1. id blangko di pustaka = jalur berkas ("1 Perceraian CG/[01] ... .rtf", sampai 181 huruf), ditolak 400 oleh pola id lama [\w.:@-]{1,80};
@@ -13,18 +15,9 @@ import { describe, expect, it } from "vitest";
 const AKAR_PORTAL = path.resolve(__dirname, "..", "..");
 const AKAR_BOT = path.resolve(__dirname, "../../../aleta_bot");
 
-const polaDariSumber = (sumber: string, awalan: string): RegExp => {
-  const baris = sumber.split("\n").find((b) => b.includes(awalan));
-  if (!baris) throw new Error("baris tidak ditemukan: " + awalan);
-  const lit = /(\/.*\/[a-z]*)(?:\.test|;)/.exec(baris.slice(baris.indexOf(awalan)));
-  if (!lit) throw new Error("pola tidak terbaca: " + baris);
-  return new Function(`return ${lit[1]}`)() as RegExp;
-};
-
 describe("layar cetak ALETA ABT dengan pustaka nyata", () => {
   it("pola id blangko menerima jalur berkas pustaka dan tetap menolak jalur berbahaya", () => {
-    const rute = readFileSync(path.join(AKAR_PORTAL, "src/app/api/aleta-abt/cetak/route.ts"), "utf8");
-    const pola = polaDariSumber(rute, "const POLA_ID =");
+    const pola = POLA_ID_BLANGKO;
     expect(pola.test("1 Perceraian CG/[01] [Kabul Verstek] Cerai (Format Lengkap).rtf")).toBe(true);
     expect(pola.test("4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf")).toBe(true);
     expect(pola.test("berkas-uji")).toBe(true);

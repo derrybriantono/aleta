@@ -1,5 +1,6 @@
 import { GOLONGAN_ALUR, susunDaftarSiap, type ButirSiap, type BlangkoSaran, type PeranAlur } from "@/lib/aleta-abt-siap";
 import { folderArsip, periksaTahapan, labelJenis, labelTahapan, type TingkatHak } from "@/lib/aleta-abt-hak-folder";
+import { idBlangkoSah } from "@/lib/id-blangko-abt";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import type { AletaDatabase } from "@/server/db/client";
 import { bacaKeadaanHakFolder, putusanHakFolder } from "@/server/modules/aleta-abt-alur/hak-folder";
@@ -113,7 +114,7 @@ export type HasilPeriksa = {
 
 /** Memeriksa satu naskah (tanpa mencetak, tanpa menyimpan): berapa isian pasti, perlu diperiksa, dan kosong. */
 export async function periksaNaskahSiap(db: AletaDatabase, p: { berkasId: string; perkaraId: string; sidangKe?: number }): Promise<HasilPeriksa> {
-  if (!/^[\w.:@-]{1,80}$/.test(p.berkasId)) throw new ApiError(400, "Blangko ini belum ada di pustaka ALETA ABT.");
+  if (!idBlangkoSah(p.berkasId)) throw new ApiError(400, "Blangko ini belum ada di pustaka ALETA ABT.");
   if (!/^\d{1,12}$/.test(p.perkaraId)) throw new ApiError(400, "Pilih perkara.");
   const n = await susunNaskah(db, { berkasId: p.berkasId, perkaraId: p.perkaraId, sidangKe: Math.max(0, Math.min(99, Math.trunc(Number(p.sidangKe) || 0))), cetakFinal: false });
   if (!n.ok) throw new ApiError(n.status >= 400 && n.status < 600 ? n.status : 502, n.alasan);

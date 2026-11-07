@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 
 import { ID_LANGKAH, LANGKAH_SELESAI, type IdLangkah, type JenisBerkasSelesai } from "@/lib/aleta-abt-selesai";
+import { idBlangkoSah } from "@/lib/id-blangko-abt";
 import { aktorSuperAdminAlur, bacaBadanJson, catatAlur, type Db } from "@/server/modules/aleta-abt-alur/penjaga";
 import { bacaKeadaanSelesai, bacaSaklarTulis, daftarSelesaiPerkara, jalankanSelesaikanBerkas, simpanSaklarTulis } from "@/server/modules/aleta-abt-selesai/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -30,7 +31,7 @@ function masukan(badan: Record<string, unknown>) {
   const perkaraId = String(badan.perkaraId ?? "").trim();
   const berkasId = String(badan.berkasId ?? "").trim();
   if (!/^\d{1,12}$/.test(perkaraId)) throw new ApiError(400, "Pilih perkara.");
-  if (!/^[\w.:@-]{1,80}$/.test(berkasId)) throw new ApiError(400, "Pilih blangko dari pustaka.");
+  if (!idBlangkoSah(berkasId)) throw new ApiError(400, "Pilih blangko dari pustaka.");
   const jenis = String(badan.jenis ?? "putusan") as JenisBerkasSelesai;
   if (!JENIS.includes(jenis)) throw new ApiError(400, "Jenis berkas tidak dikenal.");
   return {
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
       return ok({ daftar: await daftarSelesaiPerkara(a.db, perkaraId) }, { headers: { "Cache-Control": "no-store" } });
     }
     if (!perkaraId || !berkasId) return ok({ langkah, saklar }, { headers: { "Cache-Control": "no-store" } });
-    if (!/^\d{1,12}$/.test(perkaraId) || !/^[\w.:@-]{1,80}$/.test(berkasId)) throw new ApiError(400, "Perkara atau blangko tidak sah.");
+    if (!/^\d{1,12}$/.test(perkaraId) || !idBlangkoSah(berkasId)) throw new ApiError(400, "Perkara atau blangko tidak sah.");
     const k = await bacaKeadaanSelesai(a.db, perkaraId, berkasId);
     return ok({ langkah, saklar, ada: k.ada, keadaan: k.keadaan, jenis: k.jenis, diubahAt: k.diubahAt }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {

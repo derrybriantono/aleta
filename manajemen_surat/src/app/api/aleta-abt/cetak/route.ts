@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 
 import { bandingRingkasPdf } from "@/lib/aleta-abt-naskah";
 import { buangGrupTersembunyiRtf } from "@/lib/buang-grup-tersembunyi-rtf";
+import { idBlangkoSah } from "@/lib/id-blangko-abt";
 import { getEffectiveRoleId } from "@/lib/permissions";
 import { getDatabase } from "@/server/db/client";
 import { bandingkanRtf, paragrafPratinjau, susunNaskah, type NaskahJadi } from "@/server/modules/aleta-abt-cetak/naskah";
@@ -51,10 +52,6 @@ export const dynamic = "force-dynamic";
  */
 
 const BATAS_BASE64 = 28 * 1024 * 1024;
-// Id blangko di pustaka = jalur relatif berkas di ABT ("1 Perceraian CG/[01] [Kabul Verstek] Cerai (Format Lengkap).rtf", sampai 181 huruf),
-// jadi spasi, kurung, dan garis miring sah. Id hanya dipakai sebagai kunci kueri berparameter; yang ditolak: karakter kendali,
-// garis miring terbalik, dan segmen "..".
-const POLA_ID = /^(?!.*(?:^|\/)\.\.(?:\/|$))[^\u0000-\u001f\\]{1,300}$/;
 
 type Db = Awaited<ReturnType<typeof getDatabase>>;
 
@@ -82,7 +79,7 @@ async function catat(db: Db, actorUserId: string, action: string, entityId: stri
 function masukanNaskah(badan: Record<string, unknown>) {
   const berkasId = String(badan.berkasId ?? "").trim();
   const perkaraId = String(badan.perkaraId ?? "").trim();
-  if (!POLA_ID.test(berkasId)) throw new ApiError(400, "Pilih blangko dari pustaka.");
+  if (!idBlangkoSah(berkasId)) throw new ApiError(400, "Pilih blangko dari pustaka.");
   if (!/^\d{1,12}$/.test(perkaraId)) throw new ApiError(400, "Pilih perkara.");
   const sidangKe = Math.max(0, Math.min(99, Math.trunc(Number(badan.sidangKe) || 0)));
   return { berkasId, perkaraId, sidangKe };
