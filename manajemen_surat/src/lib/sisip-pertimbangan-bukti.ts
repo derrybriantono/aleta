@@ -17,7 +17,8 @@
 import { bacaRtfParagraf } from "./deteksi-sisa-blangko";
 import type { HasilPertimbangan, ParagrafBukti } from "./sinkron-pertimbangan-bukti";
 
-export type ParagrafSisip = Pick<ParagrafBukti, "kode" | "bunyi">;
+/** `kunci` (jenis bukti pada kartu) menandai paragraf bukti elektronik; tanpanya sifat elektronik dibaca dari bunyinya. */
+export type ParagrafSisip = Pick<ParagrafBukti, "kode" | "bunyi"> & Partial<Pick<ParagrafBukti, "kunci">>;
 export type TidakDisisip = { kode: string; sebab: string };
 export type HasilSisip = {
   /** RTF hasil; sama dengan masukan bila tidak ada yang disisipkan. */
@@ -171,7 +172,14 @@ export function bacaBagianNaskah(teks: readonly string[]): BagianNaskah {
   return { judul, akhir, batasFakta, jangkar, jangkarUmum, disebut, dikenal };
 }
 
-type Calon = { kode: string; bunyi: string; daftarKode: string[] };
+type Calon = { kode: string; bunyi: string; daftarKode: string[]; elektronik: boolean; sisi: string | null };
+
+const ELEKTRONIK = /bukti\s+elektronik|informasi\s+elektronik|dokumen\s+elektronik/i;
+/** Sisi bersama dari daftar kode baku ("P", "T", "PR", "TR"); null bila campur. */
+const sisiDari = (kode: readonly string[]): string | null => {
+  const sisi = new Set(kode.map((k) => k.split(".")[0]));
+  return sisi.size === 1 ? [...sisi][0] : null;
+};
 
 /** Menyaring masukan: bunyi kosong, kata terlarang, kode tak terbaca, dan ganda dibuang atau dicatat. */
 function saringCalon(paragraf: ReadonlyArray<ParagrafSisip>): { calon: Calon[]; tidak: TidakDisisip[] } {
@@ -197,7 +205,8 @@ function saringCalon(paragraf: ReadonlyArray<ParagrafSisip>): { calon: Calon[]; 
     const kunci = `${kode}|${bunyi}`;
     if (lihat.has(kunci)) continue;
     lihat.add(kunci);
-    calon.push({ kode, bunyi, daftarKode });
+    const elektronik = typeof p?.kunci === "string" && p.kunci ? /elektronik/i.test(p.kunci) : ELEKTRONIK.test(bunyi);
+    calon.push({ kode, bunyi, daftarKode, elektronik, sisi: sisiDari(daftarKode) });
   }
   // Urut menurut kode: sisi P dahulu, lalu nomor; urutan masukan dipertahankan untuk kode yang sama.
   const urut = (c: Calon) => {
@@ -225,9 +234,6 @@ function sebabBagian(b: BagianNaskah): string | null {
   if (b.jangkar < 0 && b.jangkarUmum < 0) return SEBAB_SISIP.tanpaJangkar;
   return null;
 }
-
-/** Alinea tempat sisipan: penilaian bukti berkode terakhir, atau cadangannya (penilaian bukti surat tanpa kode). */
-const jangkarPakai = (b: BagianNaskah): number => (b.jangkar >= 0 ? b.jangkar : b.jangkarUmum);
 
 /**
  * Pada jangkar cadangan letak sisipan hanya berdasar bunyi umum alinea, jadi hanya kode yang memang tercatat di daftar bukti naskah
@@ -330,7 +336,7 @@ function paling<T extends string>(daftar: Array<{ nilai: T; indeks: number }>, t
 }
 
 /** Perintah paragraf alinea sejenis di bagian pertimbangan; "- Bahwa" memilih yang menilai bukti lebih dulu. null bila tidak ada. */
-function formatSejenis(baca: string, ps: ReadonlyArray<{ teks: string; src?: Array<[number, number, number]> }>, bagian: BagianNaskah, jenis: JenisAlinea): string | null {
+function formatSejenis(baca: string, ps: ReadonlyArray<{ teks: string; src?: Array<[number, number, number]> }>, bagian: BagianNaskah, jenis: JenisAlinea, titik: number): string | null {
   const calon: Array<{ nilai: string; indeks: number }> = [];
   for (let i = bagian.judul + 1; i < bagian.akhir; i += 1) {
     if (jenisAlinea(ps[i].teks) !== jenis) continue;
@@ -340,9 +346,9 @@ function formatSejenis(baca: string, ps: ReadonlyArray<{ teks: string; src?: Arr
   if (jenis === "bahwa") {
     const bukti: Array<{ nilai: string; indeks: number }> = [];
     for (const c of calon) if (PENILAIAN.test(ps[c.indeks].teks)) bukti.push(c);
-    if (bukti.length) return paling(bukti, jangkarPakai(bagian));
+    if (bukti.length) return paling(bukti, titik);
   }
-  return paling(calon, jangkarPakai(bagian));
+  return paling(calon, titik);
 }
 
 /** Dari perintah jangkar: alinea menggantung 384 twips ("- Bahwa"). Dipakai hanya bila naskah tidak punya alinea "- Bahwa" sendiri. */
@@ -364,6 +370,47 @@ function teksSisipan(bunyi: string, jenis: JenisAlinea): string {
   return teksKeRtfSisip(bunyi);
 }
 
+/** Alinea penilaian berkode di bagian pembuktian, dengan sisi kodenya, sifat elektroniknya, dan indeks akhir blok alinea itu (lihat `akhirBlok`). */
+type KandidatNilai = { indeks: number; sisi: string | null; elektronik: boolean; akhir: number };
+
+/**
+ * Alinea penilaian bukti berkode sebelum batasFakta. Alinea lanjutan sesudahnya ("- Bahwa meskipun bukti elektronik ...", "- Bahwa dari aspek formil ...")
+ * satu blok dengannya: sisipan ditaruh sesudah blok, bukan di tengahnya. Lanjutan = "- Bahwa" yang bukan alinea saksi dan bukan
+ * penilaian berkode lain.
+ */
+function kandidatPenilaian(teks: readonly string[], bagian: BagianNaskah): KandidatNilai[] {
+  const daftar: KandidatNilai[] = [];
+  for (let i = bagian.judul + 1; i < bagian.batasFakta; i += 1) {
+    if (!PENILAIAN.test(teks[i])) continue;
+    const kode = [...kodeDisebut(teks[i])];
+    if (!kode.length) continue;
+    // Alinea "- Bahwa" milik blok yang dibuka alinea "Menimbang" sebelumnya: sifat elektronik blok itu berlaku juga bagi mereka.
+    let kepalaBlok = i;
+    while (kepalaBlok > bagian.judul + 1 && jenisAlinea(teks[kepalaBlok]) === "bahwa") kepalaBlok -= 1;
+    daftar.push({ indeks: i, sisi: sisiDari(kode), elektronik: ELEKTRONIK.test(teks[i]) || ELEKTRONIK.test(teks[kepalaBlok]), akhir: i });
+  }
+  const berkode = new Set(daftar.map((d) => d.indeks));
+  for (const d of daftar) {
+    let j = d.indeks;
+    while (j + 1 < bagian.batasFakta && !berkode.has(j + 1) && jenisAlinea(teks[j + 1]) === "bahwa" && !SAKSI.test(teks[j + 1])) j += 1;
+    d.akhir = j;
+  }
+  return daftar;
+}
+
+/**
+ * Alinea tempat satu paragraf baru ditaruh (sesudah alinea itu). Urutan pilihan:
+ *  1. penilaian berkode terakhir dengan sisi dan sifat yang sama (surat Termohon sesudah surat Termohon, elektronik sesudah elektronik);
+ *  2. penilaian berkode terakhir mana pun;
+ *  3. jangkar cadangan (penilaian surat tanpa kode).
+ */
+function titikUntuk(c: Calon, kandidat: readonly KandidatNilai[], bagian: BagianNaskah): number {
+  const sama = c.sisi ? kandidat.filter((k) => k.sisi === c.sisi && k.elektronik === c.elektronik) : [];
+  if (sama.length) return sama[sama.length - 1].akhir;
+  if (kandidat.length) return kandidat[kandidat.length - 1].akhir;
+  return bagian.jangkarUmum;
+}
+
 /** Memasukkan paragraf bukti ke RTF (string latin1: satu karakter per bita). Lihat catatan berkas. */
 export function sisipkanParagrafBukti(rtfLatin1: string, paragraf: ReadonlyArray<ParagrafSisip>, opsi?: OpsiSisip): HasilSisip {
   const asli = String(rtfLatin1 == null ? "" : rtfLatin1);
@@ -379,7 +426,8 @@ export function sisipkanParagrafBukti(rtfLatin1: string, paragraf: ReadonlyArray
   try {
     const baca = opsi && typeof opsi.untukBaca === "string" && opsi.untukBaca.length === asli.length ? opsi.untukBaca : asli;
     const ps = bacaRtfParagraf(baca, true);
-    const bagian = bacaBagianNaskah(ps.map((p) => p.teks));
+    const teksPs = ps.map((p) => p.teks);
+    const bagian = bacaBagianNaskah(teksPs);
     if (bagian.judul < 0) return semuaTidak(SEBAB_SISIP.tanpaJudul);
     const { sudahAda, baru: baruSemua } = pilah(bagian, calon);
     hasil.sudahAda = sudahAda;
@@ -389,78 +437,116 @@ export function sisipkanParagrafBukti(rtfLatin1: string, paragraf: ReadonlyArray
     const { layak: baru, tolak } = pisahTercatat(bagian, baruSemua);
     tidak.push(...tolak);
     if (!baru.length) return { rtf: asli, disisipkan: [], sudahAda, tidakDisisip: [...tidak] };
-    const jk = jangkarPakai(bagian);
 
-    // Letak sisip: penutup (\par) alinea jangkar, bukan di dalam tabel.
-    const jangkar = ps[jk];
-    const src = jangkar.src;
-    if (!src || !src.length || src.length !== jangkar.teks.length) return semuaTidak(SEBAB_SISIP.letakPenutup, baru);
-    const awalTeks = src[0][0];
-    const dariPard = baca.lastIndexOf("\\pard", awalTeks);
-    if (dariPard >= 0 && /\\intbl(?![a-zA-Z])/.test(baca.slice(dariPard, awalTeks))) return semuaTidak(SEBAB_SISIP.letakPenutup, baru);
-    const akhirTeks = Math.max(...src.map((s) => s[1]));
-    const penutup = /\\(par|sect|cell|row)(?![a-zA-Z])/g;
-    penutup.lastIndex = akhirTeks;
-    const m = penutup.exec(baca);
-    if (!m || m[1] !== "par") return semuaTidak(SEBAB_SISIP.letakPenutup, baru);
-    const pos = m.index;
+    // Kelompokkan menurut alinea tempat sisip; kelompok diurut menurut letaknya di naskah.
+    const kandidat = kandidatPenilaian(teksPs, bagian);
+    const kelompok = new Map<number, Calon[]>();
+    for (const c of baru) {
+      const t = titikUntuk(c, kandidat, bagian);
+      if (t < 0) return semuaTidak(SEBAB_SISIP.tanpaJangkar, baru);
+      kelompok.set(t, [...(kelompok.get(t) ?? []), c]);
+    }
 
-    // Format tiap sisipan. Sejenis dengan jangkar: mewarisi (tanpa perintah). Lain jenis: perintah paragraf eksplisit dari alinea sejenis di naskah;
-    // "- Bahwa" tanpa alinea sejenis diturunkan dari jangkar. Tak ada sumber: mewarisi.
-    // Warna jangkar: bila merah (teks blangko yang belum diperiksa), sisipan ditulis hitam (\cf0).
-    const cfJangkar = src[src.length - 1][2];
-    const jenisJangkar = jenisAlinea(ps[jk].teks);
-    const perintahJangkar = perintahParagraf(baca, jangkar);
-    const sumberFormat = new Map<JenisAlinea, string | null>();
-    const formatUntuk = (jenis: JenisAlinea): string | null => {
-      if (jenis === "lain" || jenis === jenisJangkar || !perintahJangkar) return null;
-      if (!sumberFormat.has(jenis)) {
-        const f = formatSejenis(baca, ps, bagian, jenis) ?? (jenis === "bahwa" ? turunkanMenggantung(perintahJangkar) : null);
-        sumberFormat.set(jenis, f === perintahJangkar ? null : f);
-      }
-      return sumberFormat.get(jenis) ?? null;
+    type Rakitan = { t: number; item: Calon[]; pos: number; posPulih: number; pulih: string; perintah: Array<string | null>; jenis: JenisAlinea[]; cf: number };
+    // Letak sisip satu kelompok: penutup (\par) alinea tempat sisip, bukan di dalam tabel.
+    // Format tiap sisipan. Sejenis dengan alinea itu: mewarisi (tanpa perintah). Lain jenis: perintah paragraf eksplisit dari alinea sejenis di naskah;
+    // "- Bahwa" tanpa alinea sejenis diturunkan dari alinea itu. Tak ada sumber: mewarisi.
+    // Warna: bila alinea itu merah (teks blangko yang belum diperiksa), sisipan ditulis hitam (\cf0).
+    const rakit = (t: number, item: Calon[]): Rakitan | null => {
+      const a = ps[t];
+      const src = a.src;
+      if (!src || !src.length || src.length !== a.teks.length) return null;
+      const awalTeks = src[0][0];
+      const dariPard = baca.lastIndexOf("\\pard", awalTeks);
+      if (dariPard >= 0 && /\\intbl(?![a-zA-Z])/.test(baca.slice(dariPard, awalTeks))) return null;
+      const akhirTeks = Math.max(...src.map((s) => s[1]));
+      const penutup = /\\(par|sect|cell|row)(?![a-zA-Z])/g;
+      penutup.lastIndex = akhirTeks;
+      const m = penutup.exec(baca);
+      if (!m || m[1] !== "par") return null;
+      const pos = m.index;
+      const jenisJangkar = jenisAlinea(a.teks);
+      const perintahJangkar = perintahParagraf(baca, a);
+      const sumberFormat = new Map<JenisAlinea, string | null>();
+      const formatUntuk = (jenis: JenisAlinea): string | null => {
+        if (jenis === "lain" || jenis === jenisJangkar || !perintahJangkar) return null;
+        if (!sumberFormat.has(jenis)) {
+          const f = formatSejenis(baca, ps, bagian, jenis, t) ?? (jenis === "bahwa" ? turunkanMenggantung(perintahJangkar) : null);
+          sumberFormat.set(jenis, f === perintahJangkar ? null : f);
+        }
+        return sumberFormat.get(jenis) ?? null;
+      };
+      const jenis = item.map((c) => jenisAlinea(c.bunyi));
+      // Perintah hanya ditulis bila berbeda dari yang sedang berlaku (mula-mula milik alinea itu), supaya sisipan sejenis tetap mewarisi.
+      let berlaku = perintahJangkar;
+      const perintah = jenis.map((j) => {
+        const tujuan = formatUntuk(j) ?? perintahJangkar;
+        if (!tujuan || tujuan === berlaku) return null;
+        berlaku = tujuan;
+        return tujuan;
+      });
+      // Alinea sesudah sisipan memakai perintahnya sendiri bila diawali \pard; bila tidak, perintah alinea itu dipulihkan tepat sesudah penutupnya.
+      const sesudahPenutup = baca.slice(pos + m[0].length, pos + m[0].length + 400);
+      const awalBerikut = /^[\s}]*/.exec(sesudahPenutup)?.[0].length ?? 0;
+      const berikutPunyaPard = /^[\s}{]*\\pard(?![a-zA-Z])/.test(sesudahPenutup);
+      const perluPulih = berlaku !== perintahJangkar && !berikutPunyaPard;
+      return {
+        t,
+        item,
+        pos,
+        posPulih: pos + m[0].length + awalBerikut,
+        pulih: perluPulih && perintahJangkar ? `${perintahJangkar} ` : "",
+        perintah,
+        jenis,
+        cf: src[src.length - 1][2],
+      };
     };
-    const jenisKartu = baru.map((c) => jenisAlinea(c.bunyi));
-    // Perintah hanya ditulis bila berbeda dari yang sedang berlaku (mula-mula milik jangkar), supaya sisipan sejenis jangkar tetap mewarisi.
-    let berlaku = perintahJangkar;
-    const perintahKartu = jenisKartu.map((j) => {
-      const tujuan = formatUntuk(j) ?? perintahJangkar;
-      if (!tujuan || tujuan === berlaku) return null;
-      berlaku = tujuan;
-      return tujuan;
-    });
-    // Alinea sesudah sisipan memakai perintahnya sendiri bila diawali \pard; bila tidak, perintah jangkar dipulihkan tepat sesudah penutup jangkar.
-    const sesudahPenutup = baca.slice(pos + m[0].length, pos + m[0].length + 400);
-    const awalBerikut = /^[\s}]*/.exec(sesudahPenutup)?.[0].length ?? 0;
-    const berikutPunyaPard = /^[\s}{]*\\pard(?![a-zA-Z])/.test(sesudahPenutup);
-    const perluPulih = berlaku !== perintahJangkar && !berikutPunyaPard;
-    const pulih = perluPulih && perintahJangkar ? `${perintahJangkar} ` : "";
-    const posPulih = pos + m[0].length + awalBerikut;
+    const rakitan: Rakitan[] = [];
+    for (const [t, item] of [...kelompok.entries()].sort((x, y) => x[0] - y[0])) {
+      const r = rakit(t, item);
+      if (!r) return semuaTidak(SEBAB_SISIP.letakPenutup, baru);
+      const sebelumnya = rakitan[rakitan.length - 1];
+      if (sebelumnya && r.pos <= sebelumnya.posPulih) return semuaTidak(SEBAB_SISIP.letakPenutup, baru);
+      rakitan.push(r);
+    }
 
-    const coba = (awalan: string, cfDiharapkan: number): HasilSisip | null => {
-      const sisipan = baru.map((c, i) => `\\par ${perintahKartu[i] ? `${perintahKartu[i]} ` : ""}${i === 0 ? awalan : ""}${teksSisipan(c.bunyi, jenisKartu[i])}`).join("");
-      const ekor = asli.slice(pos, posPulih) + pulih + asli.slice(posPulih);
-      const hasilRtf = asli.slice(0, pos) + sisipan + ekor;
-      const hasilBaca = baca.slice(0, pos) + sisipan + baca.slice(pos, posPulih) + pulih + baca.slice(posPulih);
+    const coba = (awalan: string): HasilSisip | null => {
+      const sisipan = rakitan.map((g) => g.item.map((c, i) => `\\par ${g.perintah[i] ? `${g.perintah[i]} ` : ""}${i === 0 ? awalan : ""}${teksSisipan(c.bunyi, g.jenis[i])}`).join(""));
+      const rakitTeks = (sumber: string) => {
+        let keluar = "";
+        let dari = 0;
+        rakitan.forEach((g, n) => {
+          keluar += sumber.slice(dari, g.pos) + sisipan[n] + sumber.slice(g.pos, g.posPulih) + g.pulih;
+          dari = g.posPulih;
+        });
+        return keluar + sumber.slice(dari);
+      };
+      const hasilRtf = rakitTeks(asli);
+      const hasilBaca = rakitTeks(baca);
       // Pemeriksaan ulang: gagal satu saja = tidak dipakai.
-      if (hasilRtf.length !== asli.length + sisipan.length + pulih.length) return null;
-      if (hasilRtf.slice(0, pos) !== asli.slice(0, pos) || hasilRtf.slice(pos + sisipan.length) !== ekor) return null;
-      if (selisihKurungRtf(sisipan) !== 0 || selisihKurungRtf(hasilRtf) !== selisihKurungRtf(asli)) return null;
+      const tambah = sisipan.reduce((n, x) => n + x.length, 0) + rakitan.reduce((n, g) => n + g.pulih.length, 0);
+      if (hasilRtf.length !== asli.length + tambah) return null;
+      if (sisipan.some((x) => selisihKurungRtf(x) !== 0) || selisihKurungRtf(hasilRtf) !== selisihKurungRtf(asli)) return null;
       const ps2 = bacaRtfParagraf(hasilBaca, true);
-      const k = baru.length;
-      if (ps2.length !== ps.length + k) return null;
-      for (let i = 0; i < ps2.length; i += 1) {
-        if (i <= jk) {
-          if (ps2[i].teks !== ps[i].teks) return null;
-        } else if (i <= jk + k) {
-          const p = ps2[i];
-          if (p.teks !== baru[i - jk - 1].bunyi || p.merah.length) return null;
-          if (!p.src || p.src.some((s) => s[2] !== cfDiharapkan)) return null;
-        } else if (ps2[i].teks !== ps[i - k].teks) return null;
+      const total = baru.length;
+      if (ps2.length !== ps.length + total) return null;
+      let j = 0;
+      for (let i = 0; i < ps.length; i += 1) {
+        if (ps2[j].teks !== ps[i].teks) return null;
+        j += 1;
+        const g = rakitan.find((x) => x.t === i);
+        if (!g) continue;
+        for (const c of g.item) {
+          const p = ps2[j];
+          if (!p || p.teks !== c.bunyi || p.merah.length) return null;
+          if (!p.src || p.src.some((s) => s[2] !== (awalan ? 0 : g.cf))) return null;
+          j += 1;
+        }
       }
+      if (j !== ps2.length) return null;
       return { rtf: hasilRtf, disisipkan: baru.map((c) => c.kode), sudahAda, tidakDisisip: [...tidak] };
     };
-    const jadi = coba("", cfJangkar) ?? coba("\\cf0 ", 0);
+    const jadi = coba("") ?? coba("\\cf0 ");
     return jadi ?? semuaTidak(SEBAB_SISIP.tidakLolos, baru);
   } catch {
     return semuaTidak(SEBAB_SISIP.tidakLolos);
